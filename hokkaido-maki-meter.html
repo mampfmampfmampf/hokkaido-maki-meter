@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Maki Meter">
+<meta name="theme-color" content="#14110f">
+<style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Hokkaido Maki Meter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: mobile-first, dark izakaya mood. Sumi-black ground, washi text, vermilion hanko accents, gold hairlines, seigaiha waves. One column, sticky round strip (1–10), bottom tab bar, bottom sheets. */
+:root{
+  color-scheme:dark;
+  --bg:#14110f; --paper:#1d1916; --ink:#efe6d6; --muted:#a59b8c; --line:#352e28; --plate:#e9dfcc;
+  --sake:#e2472f; --sake-ink:#fff6ec; --sake-soft:#3b1c15;
+  --wasabi:#a4c463; --wasabi-soft:#262d18; --nori:#0d0b0a; --gold:#d3a85c; --gold-soft:rgb(211 168 92 / .14);
+  --slip:#f1e8d7; --slip-ink:#211b16; --slip-line:#c9bca4;
+  --r-2:#e2472f; --r-1:#e98a5c; --r0:#8f877b; --r1:#a4c463; --r2:#6fae3a;
+  --f-display:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
+  --f-body:"Zen Kaku Gothic New",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:12px;
+  --waves:radial-gradient(circle at 50% 100%,transparent 36%,var(--gold-soft) 37% 40%,transparent 41% 56%,var(--gold-soft) 57% 60%,transparent 61% 76%,var(--gold-soft) 77% 80%,transparent 81%);
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+body{background-image:linear-gradient(180deg,rgb(226 71 47/.07),transparent 240px);background-repeat:no-repeat}
+.wrap{max-width:640px;margin:0 auto}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--sake);outline-offset:2px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+h1,h2,h3{margin:0;text-wrap:balance}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.eyebrow::before{content:"";display:inline-block;width:6px;height:6px;background:var(--sake);margin-right:7px;vertical-align:1px;border-radius:1px}
+.h2{font-family:var(--f-display);font-weight:800;font-size:26px;line-height:1.15}
+
+header.top{padding-block:16px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.brand{font-family:var(--f-display);font-weight:800;font-size:21px;min-width:0;line-height:1;letter-spacing:.01em}
+.hanko{width:40px;height:40px;flex:none;border-radius:6px;background:var(--sake);color:var(--sake-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:12px;line-height:1.05;writing-mode:vertical-rl;letter-spacing:.05em;box-shadow:inset 0 0 0 2px rgb(255 246 236/.35);transform:rotate(-3deg)}
+.brand small{display:block;font-family:var(--f-body);font-size:12px;color:var(--muted);letter-spacing:.04em;margin-top:4px;font-weight:500}
+.sync{margin-left:auto;font-size:11px;max-width:88px;line-height:1.25;color:var(--muted);display:flex;align-items:center;gap:6px;text-align:right}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.dot.ok{background:var(--wasabi)} .dot.warn{background:var(--gold)}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--nori);border-top:1px solid var(--gold-soft);
+  display:grid;grid-template-columns:repeat(5,1fr);
+  padding:6px max(4px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px))}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;text-decoration:none;color:var(--muted);font-size:11px;font-weight:700;border-radius:10px;position:relative}
+nav.tabs a svg{width:22px;height:22px}
+nav.tabs a[aria-current="page"]{color:var(--sake)}
+nav.tabs .badge{position:absolute;top:2px;left:calc(50% + 6px);background:var(--sake);color:var(--sake-ink);font-size:10px;border-radius:999px;padding:0 5px;font-family:var(--f-mono)}
+
+section.view{display:flex;flex-direction:column;gap:16px;padding-top:4px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.btn{border:0;border-radius:999px;padding:11px 18px;font-weight:700;background:var(--line);color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.primary{background:var(--sake);color:var(--sake-ink)}
+.btn.dark{background:var(--gold);color:#1a140c}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn.small{padding:7px 12px;font-size:13px}
+.btn.danger{background:transparent;border:1px solid var(--sake);color:var(--sake)}
+.btn:disabled{opacity:.45;cursor:default}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.03em}
+.in{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:15px;width:100%;font-weight:400;color:var(--ink)}
+textarea.in{min-height:76px;resize:vertical;line-height:1.45}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px;overflow-x:auto;max-width:100%;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:none;border:0;background:transparent;padding:7px 13px;border-radius:999px;font-weight:700;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgb(0 0 0/.12)}
+
+/* dish art */
+.art{width:52px;height:52px;flex:none;border-radius:12px;overflow:hidden;display:block;background:var(--plate)}
+.art svg,.art img{width:100%;height:100%;display:block;object-fit:cover}
+.art.lg{width:100%;height:auto;aspect-ratio:16/10;max-width:100%;border-radius:16px}
+.art.lg svg{width:auto;height:100%;margin:0 auto}
+
+/* start */
+.hero{background:var(--nori) var(--waves);background-size:44px 22px;border:1px solid var(--gold-soft);color:var(--ink);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+.hero h2{font-family:var(--f-display);font-size:34px;line-height:1.05;font-weight:800}
+.hero p{margin:0;color:var(--muted);max-width:42ch}
+.hero .eyebrow{color:var(--gold)}
+.hero .seg{background:rgb(255 255 255/.08);border-color:rgb(255 255 255/.16);align-self:flex-start}
+.hero .seg button{color:#b9c7c2}
+.hero .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.hero .dots{display:flex;gap:6px}
+.hero .dots span{width:22px;height:22px;border-radius:4px;border:1px solid var(--gold);font-family:var(--f-mono);font-size:10px;display:grid;place-items:center;color:var(--gold);background:var(--nori)}
+
+/* live */
+.live{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.live .k{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.live .k b{display:block;font-family:var(--f-mono);font-size:22px;font-weight:600;line-height:1.1}
+.live .k span{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.roundstrip{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);padding-block:8px;margin-block:-8px;display:flex;flex-direction:column;gap:8px}
+.rounds{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.rounds button{aspect-ratio:1;border-radius:6px;border:1.5px solid var(--line);background:var(--paper);font-family:var(--f-mono);font-weight:600;font-size:13px;color:var(--muted);display:grid;place-items:center;position:relative;padding:0;min-width:0}
+.rounds button.done{background:var(--gold-soft);border-color:var(--gold);color:var(--gold)}
+.rounds button.cur{background:var(--sake);border-color:var(--sake);color:var(--sake-ink);box-shadow:inset 0 0 0 2px rgb(255 246 236/.3)}
+.rounds button.view{outline:2px solid var(--ink);outline-offset:2px}
+.rounds button:disabled{opacity:.4;cursor:default}
+.rounds button small{position:absolute;bottom:-3px;right:-3px;background:var(--ink);color:var(--bg);font-size:9px;border-radius:999px;padding:0 4px;line-height:14px}
+.roundhead{display:flex;align-items:center;gap:10px}
+.roundhead .rn{font-family:var(--f-display);font-weight:800;font-size:22px}
+.search{position:relative}
+.search input{padding-left:38px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.rf2,.chip.rf1,.chip.rf0,.chip.rf-1,.chip.rf-2{font-family:var(--f-mono);min-width:42px}
+.chip.rf2[aria-pressed="true"]{background:var(--r2);border-color:var(--r2);color:var(--paper)} .chip.rf1[aria-pressed="true"]{background:var(--r1);border-color:var(--r1);color:var(--paper)} .chip.rf0[aria-pressed="true"]{background:var(--r0);border-color:var(--r0);color:var(--paper)} .chip.rf-1[aria-pressed="true"]{background:var(--r-1);border-color:var(--r-1);color:var(--paper)} .chip.rf-2[aria-pressed="true"]{background:var(--r-2);border-color:var(--r-2);color:var(--paper)}
+
+.cat h3{font-family:var(--f-display);font-weight:800;font-size:17px;letter-spacing:.02em;color:var(--ink);border-bottom:1px solid var(--gold-soft);margin-bottom:6px;padding:6px 2px;display:flex;justify-content:space-between}
+.list{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.dish{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;border-top:1px solid var(--line)}
+.dish:first-child{border-top:0}
+.dish .info{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;display:flex;gap:12px;align-items:center}
+.dish .txt{min-width:0;display:flex;flex-direction:column;gap:2px}
+.dish .nm{font-weight:700;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;line-height:1.25}
+.dish .nr{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-weight:500}
+.dish .ds{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
+.dish .ds .tx{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.dish.has{background:linear-gradient(90deg,var(--sake-soft),transparent 70%)}
+.tag{font-size:10px;font-weight:700;letter-spacing:.06em;border-radius:5px;padding:1px 5px;text-transform:uppercase}
+.tag.v{background:var(--wasabi-soft);color:var(--wasabi)}
+.tag.s{background:var(--sake-soft);color:var(--sake)}
+.mk{color:var(--gold);font-size:13px}
+.rb{font-family:var(--f-mono);font-weight:600;font-size:12px;border-radius:6px;padding:0 6px;line-height:18px;color:var(--paper)}
+.rb.v-2{background:var(--r-2)} .rb.v-1{background:var(--r-1)} .rb.v0{background:var(--r0)} .rb.v1{background:var(--r1)} .rb.v2{background:var(--r2)}
+.stepper{display:flex;align-items:center;gap:4px;flex:none}
+.stepper button{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--bg);font-size:20px;font-weight:700;line-height:1;display:grid;place-items:center}
+.stepper button.plus{background:var(--sake);color:var(--sake-ink);border-color:var(--sake)}
+.stepper .c{min-width:22px;text-align:center;font-family:var(--f-mono);font-weight:600;font-size:16px}
+.stepper .c.z{color:var(--line)}
+
+.slip{background:var(--slip);color:var(--slip-ink);border:0;border-radius:3px;padding:16px 16px 14px;font-family:var(--f-mono);font-size:14px;box-shadow:0 1px 0 var(--slip-line),0 8px 20px rgb(0 0 0/.35);position:relative}
+.slip::before{content:"注文";position:absolute;right:12px;top:-10px;background:var(--sake);color:var(--sake-ink);font-family:var(--f-display);font-weight:800;font-size:11px;padding:3px 6px;border-radius:3px;letter-spacing:.1em}
+.slip .hd{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#6b5f50;border-bottom:1px dashed var(--slip-line);padding-bottom:8px;margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase}
+.slip ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.slip li{display:flex;gap:10px;align-items:center}
+.slip li .q{width:28px;font-weight:600;flex:none}
+.slip li .n{flex:1;min-width:0;font-family:var(--f-body)}
+.slip li button{width:28px;height:28px;border-radius:50%;border:1px solid var(--slip-line);background:#e6dbc6;color:var(--slip-ink);font-weight:700;line-height:1;flex:none}
+.slip .rb{color:var(--slip)}
+.slip .empty{color:#6b5f50;font-family:var(--f-body)}
+
+/* rating control */
+.rate{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.rate button{border:1.5px solid var(--line);background:var(--paper);border-radius:12px;padding:10px 0;font-family:var(--f-mono);font-weight:600;font-size:17px;color:var(--muted);min-width:0}
+.rate button small{display:block;font-family:var(--f-body);font-size:10px;font-weight:700;letter-spacing:.02em}
+.rate button[aria-pressed="true"]{color:var(--paper);border-color:transparent}
+.rate button[aria-pressed="true"].v-2{background:var(--r-2)} .rate button[aria-pressed="true"].v-1{background:var(--r-1)} .rate button[aria-pressed="true"].v0{background:var(--r0)} .rate button[aria-pressed="true"].v1{background:var(--r1)} .rate button[aria-pressed="true"].v2{background:var(--r2)}
+.rate.sm{gap:4px} .rate.sm button{padding:6px 0;font-size:14px;border-radius:9px}
+
+/* stats */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.kpi b{display:block;font-family:var(--f-display);font-size:32px;font-weight:800;line-height:1.1;color:var(--ink)}
+.kpi span{font-size:12px;color:var(--muted);font-weight:700}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;font-size:14px;align-items:center}
+.bar .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.bar .v{font-family:var(--f-mono);font-weight:600;font-size:13px}
+.bar .track{grid-column:1/-1;height:7px;background:var(--bg);border-radius:4px;overflow:hidden}
+.bar .fill{height:100%;background:var(--sake);border-radius:4px}
+.bar.alt .fill{background:var(--wasabi)}
+.chart{width:100%;height:auto;display:block}
+.dist{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--bg)}
+.dist span{height:100%}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.vlist{display:flex;flex-direction:column}
+.vd{display:flex;gap:10px;align-items:center;padding:7px 0;border:0;border-top:1px solid var(--line);background:none;text-align:left;width:100%}
+.vd:first-child{border-top:0}
+.vd .art{width:36px;height:36px;border-radius:9px}
+.vd .nm{flex:1;min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec{display:grid;grid-template-columns:1fr auto;gap:8px 12px;font-size:14px;margin:12px 0 0}
+.rec dt{color:var(--muted)} .rec dd{margin:0;font-family:var(--f-mono);font-weight:600;text-align:right}
+
+/* history */
+.visit{background:var(--paper);border:1px solid var(--line);border-radius:var(--r)}
+.visit>button{width:100%;background:none;border:0;padding:14px 16px;text-align:left;display:flex;gap:12px;align-items:center}
+.visit .date{font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1;width:46px;text-align:center;flex:none}
+.visit .date small{display:block;font-family:var(--f-body);font-size:11px;color:var(--muted);margin-top:3px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.visit .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line)}
+.pill{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--sake);color:var(--sake-ink)}
+.spark{display:flex;gap:2px;align-items:flex-end;height:26px}
+.spark span{width:6px;background:var(--wasabi);border-radius:2px 2px 0 0;min-height:2px}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.mini div{background:var(--bg);border-radius:10px;padding:8px 4px;min-width:0}
+.mini b{display:block;font-family:var(--f-mono);font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini span{font-size:11px;color:var(--muted);font-weight:700}
+
+/* sheet */
+.backdrop{position:fixed;inset:0;background:rgb(0 0 0/.6);z-index:40}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--paper);border-top:1px solid var(--gold-soft);border-radius:18px 18px 0 0;max-height:92%;overflow-y:auto;
+  padding:8px max(18px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
+.sheet .in-wrap{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 6px}
+.sheet h2{font-family:var(--f-display);font-weight:800;font-size:25px;line-height:1.15}
+.tg{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 14px;font-weight:700;font-size:13px;color:var(--muted)}
+.tg[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#241800}
+.rrow{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.rrow:first-child{border-top:0}
+.rrow .top{display:flex;gap:10px;align-items:center}
+.rrow .top .art{width:40px;height:40px;border-radius:10px}
+.rrow .top button.nm{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;font-weight:700}
+.photo-actions{display:flex;gap:8px;flex-wrap:wrap}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+
+.empty-state{text-align:center;padding:28px 16px;color:var(--muted);display:flex;flex-direction:column;gap:8px;align-items:center}
+.empty-state .big{font-family:var(--f-display);font-weight:800;font-size:22px;color:var(--ink)}
+.note{font-size:12px;color:var(--muted)}
+.banner{background:var(--sake-soft);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:13px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:13px;font-weight:700;z-index:60;max-width:calc(100% - 32px)}
+.confirm{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+textarea.out{font-family:var(--f-mono);font-size:12px;min-height:140px}
+@media (prefers-reduced-motion: no-preference){
+  .stepper button:active,.rate button:active{transform:scale(.92)}
+  .sheet{animation:up .22s ease-out}
+  @keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+}
+@media (max-width:380px){.live .k b{font-size:19px}.kpi b{font-size:24px}.art{width:46px;height:46px}.rounds button{font-size:11px}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="hanko" aria-hidden="true">北海道</span><div class="brand">Hokkaido <span style="color:var(--sake)">Maki Meter</span><small>食べ放題 · Bonn</small></div>
+    <div class="sync"><span class="dot" id="syncdot"></span><span id="synctext">Lädt …</span></div>
+  </header>
+  <main id="app"></main>
+</div>
+
+<nav class="tabs" id="tabs">
+  <a href="#heute" data-tab="heute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="14" rx="9" ry="5"/><path d="M7 9l10-6M10 10l9-5"/></svg>Essen</a>
+  <a href="#karte" data-tab="karte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M9 9h6M9 13h6"/></svg>Karte</a>
+  <a href="#merkliste" data-tab="merkliste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Merkliste<span class="badge" id="mkbadge" hidden></span></a>
+  <a href="#statistik" data-tab="statistik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>All-Time</a>
+  <a href="#verlauf" data-tab="verlauf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Verlauf</a>
+</nav>
+<div id="overlay"></div>
+
+<script>
+/* ---------- Menu (Hokkaido Sushi & Grill Bonn) ---------- */
+const MAXR=10;
+const CATS=[["vor","Vorspeisen"],["sal","Salate"],["warm","Warme Gerichte"],["maki","Maki"],["temaki","Temaki"],["io","Inside Out"],["nigiri","Nigiri"],["gunkan","Gunkan & Inari"],["sashimi","Sashimi & Tataki"],["wok","Reis & Nudeln"],["dessert","Desserts"],["eigene","Eigene"]];
+const RAW=[
+["vor","Misosuppe","mit Sojabohnenpaste","v"],["vor","Mini-Frühlingsrollen","5 Stück, süß-sauer","v"],["vor","Edamame","Baby-Sojabohnen","v"],["vor","Wakame Salat","Seetang mit Sesam","v"],["vor","Kimchi","eingelegter Chinakohl","vs"],["vor","Ebi Tempura","3 knusprige Garnelen",""],["vor","Gyoza","5 Teigtaschen mit Hähnchen",""],["vor","Yakitori Spieße","2 Hähnchenspieße, Teriyaki",""],["vor","Gamba Spieße","2 Garnelenspieße, Teriyaki",""],["vor","Tintenfischringe","frittiert",""],["vor","Yaki Tako","2 Oktopusbällchen",""],["vor","Teba Yaki","2 Chicken Wings",""],["vor","Korroke","japanische Kroketten","v"],["vor","Crab","3 Stück, paniert",""],
+["sal","Avocadosalat","vegan","v"],["sal","Lachssalat","",""],["sal","Thunfischsalat","",""],["sal","Sashimi Salat","Lachs & Thunfisch",""],["sal","Chuka Ika Salat","Tintenfisch",""],["sal","Kyuri Tsukemono","eingelegter Gurkensalat","v"],["sal","Horenso Gomae","Spinat mit Sesamdressing","v"],
+["warm","Sushi Reis","","v"],["warm","Hähnchen Karage","frittiertes Hähnchen",""],["warm","Ente Karage","knusprige Ente",""],["warm","Yaki Tofu","gebratener Tofu","v"],["warm","Butterfischfilet","gegrillt",""],["warm","Lachsfilet","gegrillt",""],["warm","Hähnchen Teriyaki","",""],["warm","Champignons","","v"],["warm","Aal auf Reis","",""],["warm","Ebi Yaki","gegrillte Garnelen",""],["warm","Yaki Hireniku","Rinderfilet",""],
+["maki","Maki Kappa","Gurke","v"],["maki","Maki Oshinko","eingelegter Rettich","v"],["maki","Maki Avocado","","v"],["maki","Maki Sake","Lachs",""],["maki","Maki Kürbis","","v"],["maki","Maki Tekka","Thunfisch",""],["maki","Maki Tamago","Omelett","v"],["maki","Maki Crab","Surimi",""],["maki","Maki Unagi","gegrillter Aal",""],["maki","Maki Avocado-Lachs","",""],["maki","Maki Hokkaido","Lachs, Frischkäse, Schnittlauch",""],["maki","Maki Mango-Lachs","",""],["maki","Maki Paprika","gebratene Paprika, Frischkäse","v"],["maki","Maki Wakame","Seetang","v"],["maki","Maki Ebi Tempura","Garnele",""],
+["temaki","Temaki Unagi","gegrillter Aal",""],["temaki","Temaki California","Surimi, Gurke, Avocado",""],["temaki","Temaki Avocado-Lachs","",""],["temaki","Temaki Avocado-Thunfisch","",""],
+["io","Spicy Tuna","Thunfisch, scharfe Sauce, Fischrogen","s"],["io","Rucola Chicken","frittiert, Hähnchen, Rucola",""],["io","Mango Sushi","frittiert, Hähnchen, Mangosauce, Röstzwiebeln",""],["io","Kimchi Chicken","frittiert, Hähnchen, Kimchi","s"],["io","Vegetarian","Avocado, Gurke, Paprika","v"],["io","Osaka Roll","Mayo, Rucola, Lachs",""],["io","Tunamayo","Thunfischcreme",""],["io","California Roll","Gurke, Avocado, Surimi",""],["io","Alaska Roll","Avocado, Lachs",""],["io","Ebi Roll","frittiert, Garnele, Gurke",""],["io","Philadelphia Dream","Lachs, Frischkäse, Paprika",""],["io","California Deluxe","Avocado, Gurke, Surimi, Rogen",""],["io","Crispy Roll","knusprig, Lachs, Avocado",""],["io","Chicken Roll","Backhähnchen, Mayo",""],["io","Alaska Deluxe","Avocado, Lachs, Rogen",""],["io","Wild Fish","Lachs & Thunfisch mit Frischkäse",""],["io","Tekka Salat","Thunfisch, Wakame",""],["io","Ebi Spezial","frittierte Garnele, Gurke",""],["io","Ebi Cheese","frittierte Garnele, Käse überbacken, Teriyaki",""],["io","Fitness Roll","Avocado, Tamago, Frischkäse","v"],["io","Sake Roll","umhüllt mit Lachs, Surimi, Avocado",""],["io","Surimi Deluxe","Surimi, Avocado, Mayo, Rogen",""],["io","Sake Wakame","Lachs, Wakame",""],["io","Lachs-Rucola","Lachs, Rucola, Japan-Mayo",""],["io","Cream Cheese Roll","Frischkäse, Gurke, Schnittlauch","v"],["io","Futo Maki","frittiert, Surimi, Avocado, Garnele",""],["io","Mango-Duck Roll","Ente, Mango",""],["io","Mango California","Surimi, Avocado, Mango",""],["io","Anago Roll","Aal, Gurke, Surimi, Avocado",""],
+["nigiri","Nigiri Inari","Tofu","v"],["nigiri","Nigiri Avocado","","v"],["nigiri","Nigiri Tamago","Omelett","v"],["nigiri","Nigiri Surimi","",""],["nigiri","Nigiri Sake","Lachs",""],["nigiri","Nigiri Maguro","Thunfisch",""],["nigiri","Nigiri Ebi","Garnele",""],["nigiri","Nigiri Ika","Tintenfisch",""],["nigiri","Nigiri Hotategai","Jakobsmuschel",""],["nigiri","Nigiri Unagi","gegrillter Aal",""],["nigiri","Nigiri Hokki","Surfmuschel",""],["nigiri","Nigiri Tako","Oktopus",""],["nigiri","Nigiri Grill Lachs","gegrillter Lachs, Soja",""],["nigiri","Nigiri Salmon Philadelphia","Lachs, Frischkäse",""],["nigiri","Nigiri Salmon Mango","Lachs, Mango",""],
+["gunkan","Gunkan Osaka","gekochter Lachs, Mayo",""],["gunkan","Gunkan Tuna","gekochter Thunfisch, Mayo",""],["gunkan","Gunkan Tobiko","Fischrogen",""],["gunkan","Gunkan Surimi","",""],["gunkan","Gunkan Spicy Tuna","Thunfisch, scharf","s"],["gunkan","Gunkan Wakame","","v"],["gunkan","Gunkan Spicy Sake","Lachs, scharf","s"],["gunkan","Inari Spicy Sake","Lachs im Tofutäschchen","s"],["gunkan","Inari Spicy Tuna","Thunfisch im Tofutäschchen","s"],
+["sashimi","Sashimi Lachs","",""],["sashimi","Sashimi Thunfisch","",""],["sashimi","Sashimi Lachs & Thunfisch","",""],["sashimi","Sashimi Jakobsmuschel","mit Wakame",""],["sashimi","Sashimi Mix","Lachs, Thunfisch, Butterfisch",""],["sashimi","Lachs Carpaccio","",""],["sashimi","Tataki Lachs","angebraten",""],["sashimi","Tataki Thunfisch","angebraten",""],["sashimi","Tataki Jakobsmuscheln","angebraten",""],
+["wok","Gebratener Sushireis","mit Gemüse","v"],["wok","Gebratener Reis Yakitori","Hähnchen",""],["wok","Gebratener Reis Rind","",""],["wok","Gebratener Reis Ente","",""],["wok","Gebratener Reis Scampi","",""],["wok","Yaki Udon","mit Gemüse","v"],["wok","Yaki Udon Yakitori","Hähnchen",""],["wok","Yaki Udon Rind","",""],["wok","Yaki Udon Ente","",""],["wok","Yaki Udon Scampi","",""],["wok","Yaki Ramen","mit Gemüse","v"],["wok","Yaki Ramen Yakitori","Hähnchen",""],["wok","Yaki Ramen Rind","",""],["wok","Yaki Ramen Ente","",""],["wok","Yaki Ramen Scampi","",""],
+["dessert","Hokkaido Hausdessert","Inside-Out Banane, Honig, Mango","v"],["dessert","Sesambällchen","Kokos & rote Bohnen","v"],["dessert","Kokosbällchen","","v"],["dessert","Mochi Grüner Tee","mit Eis","v"],["dessert","Mochi Kokos","mit Eis","v"],["dessert","Mochi Kakao","mit Eis","v"]
+];
+const slug=s=>s.toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const DESC={"Misosuppe": "Klassische japanische Brühe aus Dashi und Sojabohnenpaste, mit Tofuwürfeln, Wakame und Frühlingszwiebeln. Mild, salzig, wärmt zum Start.", "Mini-Frühlingsrollen": "Fünf kleine, knusprig frittierte Röllchen mit Gemüsefüllung, dazu süß-saure Sauce zum Dippen.", "Edamame": "Junge Sojabohnen in der Schote, gedämpft und gesalzen. Bohnen mit den Zähnen aus der Schote drücken, die Schote bleibt liegen.", "Wakame Salat": "Marinierter Seetang mit Sesam und süß-säuerlichem Dressing. Leicht knackig, frisch und ein guter Gegenpol zu Frittiertem.", "Kimchi": "Koreanisch fermentierter Chinakohl mit Chili und Knoblauch. Säuerlich, scharf und würzig.", "Ebi Tempura": "Drei Garnelen im luftig-knusprigen Tempurateig ausgebacken. Am besten direkt essen, solange der Teig kross ist.", "Gyoza": "Fünf japanische Teigtaschen mit Hähnchenfüllung, unten knusprig gebraten, oben weich gedämpft. Gut mit Sojasauce.", "Yakitori Spieße": "Zwei gegrillte Hähnchenspieße, glasiert mit süßlicher Teriyakisauce und bestreut mit Sesam.", "Gamba Spieße": "Zwei Spieße mit gegrillten Garnelen in Teriyakisauce. Saftig, leicht süß und rauchig.", "Tintenfischringe": "Panierte, frittierte Tintenfischringe. Außen knusprig, innen zart, wenn sie gut gemacht sind.", "Yaki Tako": "Takoyaki aus Osaka: zwei runde Teigbällchen mit Oktopusstückchen, meist mit würziger Sauce und Mayo.", "Teba Yaki": "Zwei Chicken Wings, gegrillt oder gebraten und würzig mariniert. Zum Abknabbern mit den Fingern.", "Korroke": "Japanische Kroketten nach Art der Korokke: cremige Kartoffelfüllung in knuspriger Panko-Panade.", "Crab": "Drei panierte und frittierte Krebsfleisch-Happen aus Surimi. Mild, knusprig, mit Mayo-Sauce besonders gut.", "Avocadosalat": "Frische Avocadostücke mit leichtem Dressing. Vegan, cremig und mild.", "Lachssalat": "Würfel von rohem Lachs mit Salat und Dressing. Leicht und frisch.", "Thunfischsalat": "Roher Thunfisch in Stücken auf Salat mit Dressing. Kräftiger im Geschmack als die Lachs-Variante.", "Sashimi Salat": "Gemischte rohe Fischstücke auf Salat, mit Sesam-Dressing.", "Chuka Ika Salat": "Marinierter Tintenfischsalat nach chinesisch-japanischer Art, mit Sesam, Chili und Gemüse. Süßlich, leicht scharf, bissfest.", "Kyuri Tsukemono": "Eingelegte Gurkenscheiben, süß-sauer mariniert. Erfrischend zwischendurch.", "Horenso Gomae": "Blanchierter Spinat mit nussigem Sesamdressing. Klassische japanische Beilage, vegan.", "Sushi Reis": "Eine Schale gewürzter Sushireis mit Reisessig. Gut als Beilage zu den warmen Gerichten.", "Hähnchen Karage": "Karaage: mariniertes Hähnchen, in Stärke gewendet und frittiert. Saftig mit knuspriger Kruste.", "Ente Karage": "Knusprig frittierte Entenstücke, außen kross und innen saftig.", "Yaki Tofu": "Gebratener Tofu, goldbraun angebraten und gewürzt. Vegetarische Proteinquelle.", "Butterfischfilet": "Gegrilltes Butterfischfilet. Sehr zart, buttrig und fettreich, kleine Portion reicht.", "Lachsfilet": "Gegrilltes Lachsfilet mit leicht krosser Haut, oft mit Teriyakisauce.", "Hähnchen Teriyaki": "Gebratenes Hähnchen in glänzender, süß-salziger Teriyakisauce.", "Champignons": "Gebratene Champignons, würzig mit Soja oder Butter angebraten.", "Aal auf Reis": "Gegrillter Aal (Unagi) mit süßer Aalsauce auf Sushireis. Weich, rauchig, karamellig.", "Ebi Yaki": "Gegrillte Garnelen, schlicht gewürzt und saftig.", "Yaki Hireniku": "Gebratenes Rinderfilet in Scheiben. Zart, gern mit Teriyaki oder Pfeffersauce.", "Maki Kappa": "Dünne Rolle mit Gurke in Nori. Frisch, knackig, klassisch zum Neutralisieren.", "Maki Oshinko": "Dünne Rolle mit eingelegtem gelben Rettich. Knackig und leicht süß-sauer.", "Maki Avocado": "Dünne Rolle mit cremiger Avocado.", "Maki Sake": "Dünne Rolle mit rohem Lachs. Der Klassiker unter den Maki.", "Maki Kürbis": "Dünne Rolle mit süßlich eingelegtem Kürbis.", "Maki Tekka": "Dünne Rolle mit rohem Thunfisch, benannt nach den Spielhallen Edos.", "Maki Tamago": "Dünne Rolle mit süßem japanischem Omelett.", "Maki Crab": "Dünne Rolle mit Surimi-Krebsfleisch. Mild und leicht süß.", "Maki Unagi": "Dünne Rolle mit gegrilltem Aal und süßer Aalsauce.", "Maki Avocado-Lachs": "Dünne Rolle mit Lachs und Avocado. Cremig und frisch zugleich.", "Maki Hokkaido": "Hausrolle mit Lachs, Frischkäse und Schnittlauch. Cremig und würzig.", "Maki Mango-Lachs": "Dünne Rolle mit Lachs und süßer Mango.", "Maki Paprika": "Dünne Rolle mit gebratener Paprika und Frischkäse. Vegetarisch, leicht rauchig.", "Maki Wakame": "Dünne Rolle mit mariniertem Seetang.", "Maki Ebi Tempura": "Dünne Rolle mit knuspriger Tempura-Garnele.", "Temaki Unagi": "Handgerollte Nori-Tüte mit Reis und gegrilltem Aal. Sofort essen, solange das Nori knackt.", "Temaki California": "Nori-Tüte mit Surimi, Gurke und Avocado.", "Temaki Avocado-Lachs": "Nori-Tüte mit Lachs und Avocado.", "Temaki Avocado-Thunfisch": "Nori-Tüte mit rohem Thunfisch und Avocado.", "Spicy Tuna": "Inside-Out-Rolle mit Thunfisch in scharfer Sauce, außen mit Fischrogen. Scharf.", "Rucola Chicken": "Frittierte Inside-Out-Rolle mit Hähnchen und Rucola, außen Sesam. Warm und knusprig.", "Mango Sushi": "Frittierte Rolle mit Hähnchen und Rucola, getoppt mit Mangosauce, Mayo und Röstzwiebeln. Süß, knusprig, deftig.", "Kimchi Chicken": "Frittierte Rolle mit Hähnchen und scharfem Kimchi, mit Sesam. Pikant.", "Vegetarian": "Inside-Out-Rolle mit Avocado, Gurke und Paprika in Sesam. Frisch und vegetarisch.", "Osaka Roll": "Inside-Out-Rolle mit Lachs, Rucola und japanischer Mayo, in Sesam.", "Tunamayo": "Inside-Out-Rolle mit cremigem Thunfischsalat, in Sesam gewälzt.", "California Roll": "Der Inside-Out-Klassiker mit Surimi, Gurke und Avocado, in Sesam.", "Alaska Roll": "Inside-Out-Rolle mit Lachs und Avocado, in Sesam.", "Ebi Roll": "Frittierte Inside-Out-Rolle mit Garnele und Gurke. Knusprig und warm.", "Philadelphia Dream": "Inside-Out-Rolle mit Lachs, Philadelphia-Frischkäse und Paprika. Sehr cremig.", "California Deluxe": "California Roll in der Luxus-Variante: Surimi, Gurke, Avocado, außen Fischrogen statt Sesam.", "Crispy Roll": "Rolle mit Lachs und Avocado in knuspriger Hülle.", "Chicken Roll": "Inside-Out-Rolle mit Backhähnchen und Mayo, in Sesam. Gut für alle, die keinen rohen Fisch mögen.", "Alaska Deluxe": "Alaska Roll mit Lachs und Avocado, außen mit Fischrogen.", "Wild Fish": "Vier große Stücke: zwei mit Lachs und Frischkäse, zwei mit Thunfisch und Frischkäse.", "Tekka Salat": "Inside-Out-Rolle mit Thunfisch und Wakame-Seetang, in Sesam.", "Ebi Spezial": "Rolle mit frittierter Garnele und Gurke, obendrauf zusätzlich Garnele.", "Ebi Cheese": "Rolle mit frittierter Garnele, mit Käse überbacken und Teriyakisauce. Warm, deftig, sättigend.", "Fitness Roll": "Inside-Out-Rolle mit Avocado, japanischem Omelett und Frischkäse, in Sesam. Vegetarisch.", "Sake Roll": "California-Füllung mit Surimi, Gurke und Avocado, außen komplett mit Lachs belegt.", "Surimi Deluxe": "Rolle mit Surimi, Avocado und Mayo, außen Fischrogen.", "Sake Wakame": "Inside-Out-Rolle mit Lachs und Wakame-Seetang, in Sesam.", "Lachs-Rucola": "Inside-Out-Rolle mit Lachs, Rucola und japanischer Mayo, in Sesam.", "Cream Cheese Roll": "Inside-Out-Rolle mit Frischkäse, Gurke und Schnittlauch. Vegetarisch und cremig.", "Futo Maki": "Dicke, frittierte Rolle mit Surimi, Avocado, Garnele und japanischer Mayo. Groß, warm und knusprig.", "Mango-Duck Roll": "Inside-Out-Rolle mit knuspriger Ente und süßer Mango, in Sesam.", "Mango California": "California Roll mit Surimi und Avocado, ergänzt um süße Mango.", "Anago Roll": "Sechs Stücke mit Aal, Gurke, Surimi, Avocado und Mayo. Reichhaltig und leicht süß.", "Nigiri Inari": "Sushireis in einer süß marinierten, frittierten Tofutasche.", "Nigiri Avocado": "Reisbällchen mit Avocadoscheibe und Nori-Band.", "Nigiri Tamago": "Reisbällchen mit süßem japanischem Omelett und Nori-Band.", "Nigiri Surimi": "Reisbällchen mit Surimi-Krebsfleisch.", "Nigiri Sake": "Reisbällchen mit einer Scheibe rohem Lachs. Der Nigiri-Klassiker.", "Nigiri Maguro": "Reisbällchen mit rohem Thunfisch.", "Nigiri Ebi": "Reisbällchen mit gekochter, aufgefächerter Garnele.", "Nigiri Ika": "Reisbällchen mit rohem Tintenfisch. Bissfest und mild.", "Nigiri Hotategai": "Reisbällchen mit Jakobsmuschel. Zart, buttrig und leicht süß.", "Nigiri Unagi": "Reisbällchen mit gegrilltem Aal und süßer Aalsauce.", "Nigiri Hokki": "Reisbällchen mit Surfmuschel. Rot-weiß, bissfest, mild-süß.", "Nigiri Tako": "Reisbällchen mit gekochtem Oktopus. Fest im Biss.", "Nigiri Grill Lachs": "Reisbällchen mit abgeflämmtem Lachs und Sojasauce. Rauchiger als der rohe.", "Nigiri Salmon Philadelphia": "Reisbällchen mit Lachs und einem Klecks Frischkäse.", "Nigiri Salmon Mango": "Reisbällchen mit Lachs und Mango.", "Gunkan Osaka": "Zwei Gunkan-Schiffchen in Nori mit gekochtem Lachs in japanischer Mayo.", "Gunkan Tuna": "Zwei Gunkan mit gekochtem Thunfisch in japanischer Mayo.", "Gunkan Tobiko": "Zwei Gunkan mit knackigem, orangefarbenem fliegenden Fischrogen. Ploppt beim Kauen.", "Gunkan Surimi": "Zwei Gunkan mit Surimi-Salat.", "Gunkan Spicy Tuna": "Zwei Gunkan mit Thunfisch in scharfer Sauce. Scharf.", "Gunkan Wakame": "Zwei Gunkan mit mariniertem Seetangsalat. Vegetarisch.", "Gunkan Spicy Sake": "Zwei Gunkan mit Lachs in scharfer Sauce. Scharf.", "Inari Spicy Sake": "Zwei süße Tofutaschen mit Reis, getoppt mit scharfem Lachs.", "Inari Spicy Tuna": "Zwei süße Tofutaschen mit Reis, getoppt mit scharfem Thunfisch.", "Sashimi Lachs": "Rohe Lachsscheiben ohne Reis. Pur mit Soja und Wasabi.", "Sashimi Thunfisch": "Rohe Thunfischscheiben ohne Reis.", "Sashimi Lachs & Thunfisch": "Rohe Lachs- und Thunfischscheiben im Mix.", "Sashimi Jakobsmuschel": "Hauchdünne rohe Jakobsmuschel mit Wakame-Salat.", "Sashimi Mix": "Gemischte Sashimi-Platte mit verschiedenen rohen Fischsorten.", "Lachs Carpaccio": "Hauchdünn geschnittener roher Lachs mit Zitrus-Dressing.", "Tataki Lachs": "Kurz scharf angebratener Lachs, innen roh, in Scheiben. Mit Ponzu oder Sesam.", "Tataki Thunfisch": "Außen angebratener, innen roher Thunfisch in Scheiben.", "Tataki Jakobsmuscheln": "Angebratene Jakobsmuscheln, außen karamellisiert, innen glasig.", "Gebratener Sushireis": "Im Wok gebratener Sushireis mit frischem Gemüse.", "Gebratener Reis Yakitori": "Gebratener Reis mit Gemüse und zwei Hähnchenspießen.", "Gebratener Reis Rind": "Gebratener Reis mit Gemüse und Rindfleisch.", "Gebratener Reis Ente": "Gebratener Reis mit Gemüse und knuspriger Ente.", "Gebratener Reis Scampi": "Gebratener Reis mit Gemüse und Scampi.", "Yaki Udon": "Dicke, weiche Weizennudeln aus dem Wok mit frischem Gemüse.", "Yaki Udon Yakitori": "Gebratene Udon mit Gemüse und zwei Hähnchenspießen.", "Yaki Udon Rind": "Gebratene Udon mit Gemüse und Rindfleisch.", "Yaki Udon Ente": "Gebratene Udon mit Gemüse und knuspriger Ente.", "Yaki Udon Scampi": "Gebratene Udon mit Gemüse und Scampi.", "Yaki Ramen": "Dünne, bissfeste Weizennudeln aus dem Wok mit frischem Gemüse.", "Yaki Ramen Yakitori": "Gebratene Ramen mit Gemüse und zwei Hähnchenspießen.", "Yaki Ramen Rind": "Gebratene Ramen mit Gemüse und Rindfleisch.", "Yaki Ramen Ente": "Gebratene Ramen mit Gemüse und knuspriger Ente.", "Yaki Ramen Scampi": "Gebratene Ramen mit Gemüse und Scampi.", "Hokkaido Hausdessert": "Das Haus-Dessert: süße Inside-Out-Rolle mit Banane, Honig und Mangosauce. Acht Stück, gut zum Teilen.", "Sesambällchen": "Vier hausgemachte frittierte Klebreisbällchen mit Sesamkruste, gefüllt mit Kokos und roter Bohnenpaste.", "Kokosbällchen": "Drei weiche, süße Bällchen mit Kokosraspeln.", "Mochi Grüner Tee": "Weicher Reisteig um eine Kugel Matcha-Eis. Leicht herb.", "Mochi Kokos": "Weicher Reisteig um eine Kugel Kokos-Eis.", "Mochi Kakao": "Weicher Reisteig um eine Kugel Schokoladen-Eis."};
+const BASE=RAW.map(([c,n,d,t])=>({id:c+"-"+slug(n),c,n,d,l:DESC[n]||"",v:t.includes("v"),s:t.includes("s")}));
+const RATE=[[-2,"−−","mies"],[-1,"−","meh"],[0,"o","okay"],[1,"+","gut"],[2,"++","top"]];
+const RLAB=Object.fromEntries(RATE.map(([v,s])=>[v,s]));
+
+/* ---------- Dish illustrations (generated SVG) ---------- */
+const COL=[[/lachs|sake|salmon|alaska|osaka/i,"#f28c5e"],[/thunfisch|tuna|tekka|maguro/i,"#c8324a"],[/aal|unagi|anago/i,"#7a4a2a"],[/garnele|ebi|scampi|gamba/i,"#f4a08a"],[/surimi|crab|california/i,"#e8604c"],[/tamago|omelett/i,"#f2c94c"],[/avocado|vegetarian|fitness/i,"#8fbf4d"],[/gurke|kappa|kyuri/i,"#5fa64a"],[/ente|duck/i,"#8b4a3a"],[/hähnchen|chicken|yakitori|teba|karage/i,"#d9a066"],[/mango/i,"#f6b93b"],[/oshinko|rettich/i,"#f0dc5a"],[/kürbis/i,"#e9963b"],[/wakame|seetang|spinat|horenso|rucola/i,"#3e7b3a"],[/tobiko|rogen/i,"#f26b3a"],[/jakobsmuschel|hotategai|hokki/i,"#f1dcc0"],[/tako|oktopus|ika|tintenfisch/i,"#e8c3b8"],[/rind|hireniku/i,"#8e3b2e"],[/tofu|inari/i,"#d9a85b"],[/frischkäse|cream cheese|philadelphia|käse/i,"#fff4dc"],[/paprika/i,"#e2483d"],[/kimchi/i,"#d9452f"],[/edamame/i,"#7cb342"],[/champignon/i,"#c9a27e"],[/butterfisch/i,"#f3e3c3"],[/grüner tee/i,"#9cbf5a"],[/kakao/i,"#6b4226"],[/kokos|sesam/i,"#f4efe6"],[/banane/i,"#f5d76e"]];
+function colorsOf(d){const t=d.n+" "+(d.d||"");const out=[];COL.forEach(([re,c])=>{if(re.test(t)&&!out.includes(c))out.push(c)});return out.length?out:["#e9705d"]}
+const NORI="#1f2b25",RICE="#fbf9f2",RSTROKE="#ddd8c9",FRY="#d9a24e";
+function artSVG(d){
+  const c=colorsOf(d),c0=c[0],c1=c[1]||c0,c2=c[2]||c1,t=(d.n+" "+(d.d||"")).toLowerCase();
+  const fried=/frittiert|crispy|futo/.test(t);
+  let g="";
+  const sesame=(cx,cy,r,n)=>{let s="";for(let i=0;i<n;i++){const a=i*2.399,rr=r*Math.sqrt((i+.5)/n);s+=`<ellipse cx="${(cx+Math.cos(a)*rr).toFixed(1)}" cy="${(cy+Math.sin(a)*rr).toFixed(1)}" rx="1" ry=".6" fill="#3a2e1e" opacity=".55" transform="rotate(${i*37} ${(cx+Math.cos(a)*rr).toFixed(1)} ${(cy+Math.sin(a)*rr).toFixed(1)})"/>`}return s};
+  const fill3=(cx,cy,r)=>c.length===1?`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c0}"/>`:c.length===2?`<path d="M${cx-r} ${cy}a${r} ${r} 0 0 1 ${2*r} 0z" fill="${c0}"/><path d="M${cx-r} ${cy}a${r} ${r} 0 0 0 ${2*r} 0z" fill="${c1}"/>`:`<path d="M${cx} ${cy}L${cx} ${cy-r}A${r} ${r} 0 0 1 ${(cx+r*.866).toFixed(1)} ${cy+r/2}z" fill="${c0}"/><path d="M${cx} ${cy}L${(cx+r*.866).toFixed(1)} ${cy+r/2}A${r} ${r} 0 0 1 ${(cx-r*.866).toFixed(1)} ${cy+r/2}z" fill="${c1}"/><path d="M${cx} ${cy}L${(cx-r*.866).toFixed(1)} ${cy+r/2}A${r} ${r} 0 0 1 ${cx} ${cy-r}z" fill="${c2}"/>`;
+  switch(d.c){
+    case "maki":
+      g=[[22,34],[42,34],[32,22]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="11" fill="${NORI}"/><circle cx="${x}" cy="${y}" r="9" fill="${RICE}"/>${fill3(x,y,4)}`).join("");break;
+    case "io":
+      g=[[23,35],[41,35],[32,22]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="11.5" fill="${fried?FRY:RICE}" stroke="${fried?"#b9832f":RSTROKE}"/>${fried?"":sesame(x,y,10,9)}<circle cx="${x}" cy="${y}" r="6.5" fill="none" stroke="${NORI}" stroke-width="1.6"/>${fill3(x,y,5)}${/rogen|tobiko|deluxe/.test(t)?`<path d="M${x-11} ${y-3}a11 11 0 0 1 22 0" fill="none" stroke="#f26b3a" stroke-width="2.4" stroke-dasharray="1.5 1.2"/>`:""}`).join("");break;
+    case "nigiri":{
+      const top=/inari/.test(t)?"#d9a85b":c0;
+      g=[[32,40,1],[20,28,.8],[44,28,.8]].slice(0,1).map(([x,y])=>`<ellipse cx="${x}" cy="${y+8}" rx="19" ry="8" fill="${RICE}" stroke="${RSTROKE}"/><path d="M${x-22} ${y-2}q22 -14 44 0q-2 8 -22 9q-20 -1 -22 -9z" fill="${top}"/>${/lachs|sake|salmon/.test(t)?`<path d="M${x-12} ${y-7}l4 8M${x-4} ${y-9}l4 9M${x+4} ${y-9}l4 9M${x+12} ${y-7}l3 7" stroke="#fff" stroke-opacity=".55" stroke-width="1.6"/>`:""}${/tamago|unagi|inari/.test(t)?`<rect x="${x-3}" y="${y-9}" width="6" height="17" fill="${NORI}"/>`:""}${/mango|philadelphia/.test(t)?`<circle cx="${x}" cy="${y-6}" r="3.2" fill="${c1}"/>`:""}`).join("");
+      break}
+    case "gunkan":
+      if(/inari/.test(t))g=`<rect x="15" y="22" width="34" height="24" rx="9" fill="#d9a85b"/><path d="M17 27h30" stroke="#b9853d" stroke-width="1.2"/><ellipse cx="32" cy="23" rx="15" ry="6" fill="${c0}"/><path d="M24 22h16" stroke="#7a1a10" stroke-width="1.4" stroke-dasharray="2 2"/>`;
+      else g=`<rect x="17" y="24" width="30" height="22" rx="4" fill="${NORI}"/><ellipse cx="32" cy="46" rx="15" ry="4" fill="${NORI}"/><ellipse cx="32" cy="24" rx="15" ry="5" fill="${RICE}"/><ellipse cx="32" cy="22" rx="13" ry="6" fill="${c0}"/>${/tobiko|spicy/.test(t)?sesame(32,22,10,10).replace(/#3a2e1e/g,"#7a1a10"):""}`;
+      break;
+    case "temaki":
+      g=`<path d="M18 20l28 6l-12 26z" fill="${NORI}"/><path d="M18 20q14 -10 28 6" fill="${RICE}" stroke="${RSTROKE}"/><circle cx="27" cy="18" r="5" fill="${c0}"/><circle cx="35" cy="20" r="4.5" fill="${c1}"/><path d="M38 14l6 -6" stroke="${c2==="#e9705d"?"#5fa64a":c2}" stroke-width="3" stroke-linecap="round"/>`;break;
+    case "sashimi":{
+      if(c0==="#3e7b3a"&&c.length>1){c.shift()}const s0=c[0],s1=c[1]||s0;
+      const tat=/tataki/.test(t),carp=/carpaccio/.test(t);
+      if(carp){g=[0,1,2,3,4,5].map(i=>{const a=i*60;return `<ellipse cx="32" cy="20" rx="6" ry="11" fill="${s0}" transform="rotate(${a} 32 32)" opacity=".92"/>`}).join("")+`<circle cx="32" cy="32" r="4" fill="#3e7b3a"/>`}
+      else g=[0,1,2].map(i=>{const col=/mix/.test(t)?["#f28c5e","#c8324a","#f3e3c3"][i]:/&/.test(t)?[s0,s1,s0][i]:s0;return `<rect x="${17+i*10}" y="${17+i*3}" width="15" height="28" rx="5" fill="${col}" stroke="${tat?"#5a2a1a":"none"}" stroke-width="${tat?2.2:0}" transform="rotate(${-14+i*12} ${24+i*10} 31)"/>${/lachs|mix/.test(t)&&col==="#f28c5e"?`<path d="M${20+i*10} ${24+i*3}l9 4M${20+i*10} ${32+i*3}l9 4" stroke="#fff" stroke-opacity=".5" stroke-width="1.4" transform="rotate(${-14+i*12} ${24+i*10} 31)"/>`:""}`}).join("")+`<path d="M44 46q4 -5 8 -1" stroke="#3e7b3a" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+      break}
+    case "wok":{
+      const bowl=`<path d="M12 30h40q-2 18 -20 18q-18 0 -20 -18z" fill="#2c3a35"/><path d="M12 30h40" stroke="#41524c" stroke-width="2"/>`;
+      let top="";
+      const mound=`<ellipse cx="32" cy="28" rx="18" ry="7" fill="${/udon|ramen/.test(t)?"#f3dc9c":"#f3ead1"}"/>`;
+      if(/udon/.test(t))top=[0,1,2,3].map(i=>`<path d="M16 ${28-i*2}q8 -6 16 0t16 0" stroke="#d9b45a" stroke-width="2.2" fill="none"/>`).join("");
+      else if(/ramen/.test(t))top=[0,1,2,3,4].map(i=>`<path d="M16 ${29-i*1.8}q4 -4 8 0t8 0t8 0t8 0" stroke="#c99a3a" stroke-width="1.2" fill="none"/>`).join("");
+      else top=Array.from({length:22},(_,i)=>`<ellipse cx="${17+(i*7)%30}" cy="${22+((i*5)%8)}" rx="2.2" ry="1.4" fill="#fffaf0" stroke="#e2d6b8" stroke-width=".4"/>`).join("");
+      const prot=c0!=="#e9705d"?[[24,22],[38,21],[31,25]].map(([x,y])=>`<rect x="${x-3}" y="${y-2.5}" width="6" height="5" rx="1.5" fill="${c0}"/>`).join(""):"";
+      g=mound+top+`<circle cx="22" cy="24" r="2" fill="#7cb342"/><circle cx="42" cy="25" r="2" fill="#e2483d"/>`+prot+bowl;break}
+    case "dessert":
+      if(/mochi/.test(t))g=`<ellipse cx="32" cy="46" rx="18" ry="4" fill="#000" opacity=".08"/><path d="M14 40q0 -22 18 -22t18 22q0 6 -18 6t-18 -6z" fill="${c0}"/><ellipse cx="26" cy="27" rx="5" ry="3" fill="#fff" opacity=".35"/>`;
+      else if(/hausdessert/.test(t))g=[[23,34],[41,34]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="10" fill="${RICE}" stroke="${RSTROKE}"/><circle cx="${x}" cy="${y}" r="5" fill="#f5d76e"/>`).join("")+`<path d="M14 20q18 -8 36 2" stroke="#f6b93b" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+      else g=[[22,36],[42,36],[32,24]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="10" fill="${/sesam/.test(t)?"#e1b469":"#f4efe6"}" stroke="#d8c9a8"/>${/sesam/.test(t)?sesame(x,y,8,12).replace(/#3a2e1e/g,"#fff"):sesame(x,y,8,10).replace(/#3a2e1e/g,"#cdbf9e")}`).join("");
+      break;
+    case "sal":
+      g=`<path d="M12 30h40q-2 18 -20 18q-18 0 -20 -18z" fill="#f4efe6" stroke="#d8d0bf"/>`+(/gurke|kyuri/.test(t)?[18,26,34,42].map((x,i)=>`<circle cx="${x+2}" cy="${25-(i%2)*3}" r="4.2" fill="#5fa64a"/><circle cx="${x+2}" cy="${25-(i%2)*3}" r="2.6" fill="#dff0c8"/>`).join(""):`<path d="M16 29q6 -12 14 -4q4 -10 12 -3q6 -6 8 7z" fill="#3e7b3a"/>`+(c0!=="#e9705d"&&c0!=="#3e7b3a"?[[24,23],[34,21],[40,25]].map(([x,y])=>`<rect x="${x-3.5}" y="${y-3}" width="7" height="6" rx="1.5" fill="${c0}"/>`).join(""):""))+sesame(32,24,10,8).replace(/#3a2e1e/g,"#fff");
+      break;
+    default:{ // vor, warm, eigene
+      const plate=`<ellipse cx="32" cy="38" rx="24" ry="12" fill="#f7f4ec" stroke="#ddd5c3"/>`;
+      if(/suppe/.test(t))g=`<path d="M14 28h36q-2 18 -18 18q-16 0 -18 -18z" fill="#5a3a2a"/><ellipse cx="32" cy="28" rx="18" ry="5" fill="#c9965a"/><rect x="26" y="25" width="5" height="4" fill="#f4efe6"/><rect x="34" y="27" width="4" height="3" fill="#f4efe6"/><path d="M28 24l2 -2M36 26l2 -2" stroke="#3e7b3a" stroke-width="1.6"/>`;
+      else if(/spieß/.test(t))g=plate+[0,1].map(i=>`<path d="M14 ${34+i*8}l38 -8" stroke="#b08b5a" stroke-width="1.6"/>${[0,1,2,3].map(j=>`<rect x="${17+j*8}" y="${29+i*8-j*1.7}" width="7" height="6" rx="2" fill="${c0}" stroke="#7a4a2a" stroke-width=".8"/>`).join("")}`).join("");
+      else if(/gyoza/.test(t))g=plate+[[22,36],[34,34],[45,37]].map(([x,y])=>`<path d="M${x-8} ${y}q8 -12 16 0z" fill="#f2dfb5" stroke="#c9a46b"/><path d="M${x-8} ${y}h16" stroke="#b07d3a" stroke-width="2"/>`).join("");
+      else if(/frühlingsrolle/.test(t))g=plate+[0,1,2].map(i=>`<rect x="${16+i*3}" y="${28+i*5}" width="30" height="7" rx="3.5" fill="#d9a24e" stroke="#b07d3a" transform="rotate(-8 32 ${32+i*5})"/>`).join("");
+      else if(/edamame/.test(t))g=plate+[0,1,2,3].map(i=>`<path d="M${16+i*8} ${30+(i%2)*6}q6 -6 12 0q-6 6 -12 0z" fill="#7cb342" stroke="#5a8a2a"/>`).join("");
+      else if(/tempura|wings|teba|karage|tintenfisch|crab|tako|korroke/.test(t))g=plate+[[22,34],[34,32],[44,37],[30,40]].map(([x,y],i)=>/tintenfisch/.test(t)?`<circle cx="${x}" cy="${y}" r="5.5" fill="none" stroke="${FRY}" stroke-width="3.2"/>`:/tako|korroke|crab/.test(t)?`<circle cx="${x}" cy="${y}" r="6" fill="${/tako/.test(t)?"#c98a4a":FRY}"/>${/tako/.test(t)?`<path d="M${x-4} ${y-2}q4 3 8 0" stroke="#5a3a2a" stroke-width="1.4" fill="none"/>`:""}`:`<ellipse cx="${x}" cy="${y}" rx="8" ry="5" fill="${FRY}" transform="rotate(${-20+i*15} ${x} ${y})"/>`).join("");
+      else if(/reis/.test(t))g=`<path d="M14 30h36q-2 16 -18 16q-16 0 -18 -16z" fill="#2c3a35"/><path d="M15 30q17 -16 34 0z" fill="${RICE}"/>`+(/aal/.test(t)?`<rect x="20" y="22" width="24" height="7" rx="3" fill="#7a4a2a"/>`:"");
+      else if(/tofu/.test(t))g=plate+[[20,32],[30,36],[40,32]].map(([x,y])=>`<rect x="${x-5}" y="${y-5}" width="11" height="10" rx="2" fill="#e8c27a" stroke="#c99a4a"/>`).join("");
+      else if(/champignon/.test(t))g=plate+[[22,34],[34,32],[43,37]].map(([x,y])=>`<path d="M${x-7} ${y}q7 -10 14 0z" fill="${c0}"/><rect x="${x-2}" y="${y}" width="4" height="5" fill="#efe2cf"/>`).join("");
+      else if(/kimchi|wakame/.test(t))g=`<path d="M14 30h36q-2 16 -18 16q-16 0 -18 -16z" fill="#f4efe6" stroke="#d8d0bf"/><path d="M16 30q4 -10 10 -4q5 -8 10 -2q6 -6 12 6z" fill="${c0}"/>`;
+      else if(d.c==="eigene")g=plate+`<text x="32" y="43" text-anchor="middle" font-size="20" font-family="Georgia,serif" fill="#b9b2a0">?</text>`;
+      else g=plate+`<path d="M18 36q4 -8 14 -8t14 8q-6 6 -14 6t-14 -6z" fill="${c0}"/>${/teriyaki|aal|unagi/.test(t)?`<path d="M20 34q12 -6 24 0" stroke="#4a2a1a" stroke-width="1.6" fill="none"/>`:`<path d="M22 33l20 0" stroke="#fff" stroke-opacity=".35" stroke-width="1.4"/>`}<path d="M40 42q4 -3 6 0" stroke="#3e7b3a" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+    }
+  }
+  return `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="var(--plate)"/>${g}</svg>`;
+}
+const _artCache={};
+function art(d,cls){const ph=S.photos[d.id];if(ph)return `<span class="art ${cls||""}"><img src="${ph}" alt="Foto: ${h(d.n)}"></span>`;const ck=d.id+"|"+d.c+"|"+d.n+"|"+(d.d||"");if(!_artCache[ck])_artCache[ck]=artSVG(d);return `<span class="art ${cls||""}">${_artCache[ck]}</span>`}
+
+/* ---------- State ---------- */
+// visits {id:{id,start,end,active,round,rounds:{"1":[{d,t}]},mode,note}}  me {ratings:{did:{r,note,mark}},notes,nums,custom,hidden}  photos {did:dataURL}
+const emptyShared=()=>({edits:{},custom:[],hidden:[],nums:{},updated:0});
+const S={visits:{},me:{ratings:{},notes:"",nums:{},custom:[],hidden:[],edits:{},unhidden:[]},photos:{},shared:emptyShared()};
+const UI={tab:"heute",cat:"alle",q:"",kfilter:"alle",open:null,confirmDel:null,startMode:"abend",vr:null,period:"all",canShare:false,rf:"alle"};
+const PERIODS=[["all","All-Time"],["jahr","Dieses Jahr"],["90","90 Tage"],["10","Letzte 10 Besuche"]];
+function periodVisits(){const vs=visitsSorted();if(UI.period==="jahr"){const y=new Date().getFullYear();return vs.filter(v=>new Date(v.start).getFullYear()===y)}if(UI.period==="90"){const c=Date.now()-90*864e5;return vs.filter(v=>v.start>=c)}if(UI.period==="10")return vs.slice(0,10);return vs}
+const LKEY="hokkaido-solo-v3";
+let COLREF=null,DBROOT=null,mode="local",DL=null,SAMPLE=null;
+
+function applyEd(d,e){return e?Object.assign({},d,e,{id:d.id}):d}
+function allDishes(){const se=S.shared.edits||{},me=S.me.edits||{};return BASE.concat(S.shared.custom||[],S.me.custom||[]).map(d=>applyEd(applyEd(d,se[d.id]),me[d.id]))}
+function menu(){const unhid=new Set(S.me.unhidden||[]);const hid=new Set([...(S.shared.hidden||[]).filter(id=>!unhid.has(id)),...(S.me.hidden||[])]);return allDishes().filter(d=>!hid.has(d.id))}
+let _dm=null;function dish(id){if(!_dm){_dm={};allDishes().forEach(d=>_dm[d.id]=d)}return _dm[id]||{id,c:"eigene",n:"Unbekanntes Gericht",d:""}}
+const nr=id=>(S.me.nums||{})[id]||(S.shared.nums||{})[id]||"";
+const rt=id=>(S.me.ratings||{})[id]||{};
+const hasR=id=>typeof rt(id).r==="number";
+function activeVisit(){return Object.values(S.visits).find(v=>v.active)||null}
+function visitsSorted(){return Object.values(S.visits).sort((a,b)=>b.start-a.start)}
+function vOrders(v){const out=[];for(let r=1;r<=MAXR;r++)((v.rounds||{})[r]||[]).forEach(o=>out.push({d:o.d,t:o.t,r,v:v.id}));return out}
+function allOrders(){return Object.values(S.visits).flatMap(vOrders)}
+function roundCount(v){let n=0;for(let r=1;r<=MAXR;r++)if(((v.rounds||{})[r]||[]).length)n=r;return n}
+
+/* ---------- Persistence ---------- */
+function loadLocal(){try{const r=JSON.parse(localStorage.getItem(LKEY)||"null");if(r){S.visits=r.visits||{};S.me=Object.assign(S.me,r.me||{});S.photos=r.photos||{};S.shared=Object.assign(emptyShared(),r.shared||{})}}catch(e){}}
+let lsWarned=false;
+function saveLocal(){try{localStorage.setItem(LKEY,JSON.stringify(S))}catch(e){try{localStorage.setItem(LKEY,JSON.stringify({visits:S.visits,me:S.me,photos:{},shared:S.shared}))}catch(e2){}if(mode==="local"&&!lsWarned){lsWarned=true;toast("Gerätespeicher ist voll. Fotos werden hier nicht gesichert.")}}}
+const clone=x=>JSON.parse(JSON.stringify(x));
+function docData(id){if(id==="shared")return S.shared;if(id==="state")return S.me;if(id.startsWith("v-"))return S.visits[id]||null;if(id.startsWith("ph-")){const p=S.photos[id.slice(3)];return p?{img:p}:null}return null}
+const WQ={};
+function persist(id){
+  _dm=null;saveLocal();
+  if(id==="shared"){if(!DBROOT||!UI.canShare)return}else if(mode!=="db")return;
+  const q=WQ[id]||(WQ[id]={});q.pending=true;clearTimeout(q.t);q.t=setTimeout(()=>flush(id),400);
+}
+async function write(id){if(id==="shared"){await DBROOT.doc("shared/menu").set(clone(S.shared));return}const d=docData(id);if(d===null)await COLREF.doc(id).delete();else await COLREF.doc(id).set(clone(d))}
+async function flush(id){
+  const q=WQ[id];if(q.busy){q.dirty=true;return}
+  q.busy=true;q.dirty=false;q.t=null;
+  try{await write(id);setSync("ok","Gesichert")}
+  catch(e){
+    if(e&&e.code==="unavailable"){await new Promise(r=>setTimeout(r,700+Math.random()*900));try{await write(id)}catch(e2){toast("Online-Speichern hat nicht geklappt. Auf dem Gerät ist es gesichert.")}}
+    else if(e&&e.code==="invalid_argument"&&id==="shared"){UI.canShare=false;toast("Die gemeinsame Karte darf nur die Besitzerin oder der Besitzer der App ändern.")}
+    else if(e&&e.code==="invalid_argument"){goLocal("Du hast hier keine Schreibrechte. Ab jetzt wird nur auf diesem Gerät gespeichert.")}
+    else if(e&&e.code==="quota_exceeded")toast("Speicher voll. Lösche alte Fotos oder Besuche.");
+    else toast("Online-Speichern hat nicht geklappt. Auf dem Gerät ist es gesichert.");
+  }
+  q.busy=false;if(q.dirty)flush(id);else q.pending=!!q.t;
+}
+function goLocal(msg){mode="local";setSync("warn","Nur auf diesem Gerät");if(msg)toast(msg);render()}
+const pend=id=>WQ[id]&&(WQ[id].pending||WQ[id].busy);
+function applySnap(snap){
+  const visits={},photos={};let me=null;
+  snap.docs.forEach(d=>{const x=d.data();if(!x)return;if(d.id==="state")me=x;else if(d.id.startsWith("v-"))visits[d.id]=clone(x);else if(d.id.startsWith("ph-")&&x.img)photos[d.id.slice(3)]=x.img});
+  if(me&&!pend("state"))S.me=Object.assign({ratings:{},notes:"",nums:{},custom:[],hidden:[],edits:{},unhidden:[]},clone(me));
+  const nv={};for(const id in visits)if(!pend(id))nv[id]=visits[id];for(const id in S.visits)if(pend(id))nv[id]=S.visits[id];S.visits=nv;
+  const np={};for(const k in photos)if(!pend("ph-"+k))np[k]=photos[k];for(const k in S.photos)if(pend("ph-"+k))np[k]=S.photos[k];S.photos=np;
+  _dm=null;saveLocal();scheduleRender();
+}
+let rT=null;function scheduleRender(){if(rT)return;rT=requestAnimationFrame(()=>{rT=null;render()})}
+function setSync(kind,text){document.getElementById("syncdot").className="dot "+(kind||"");document.getElementById("synctext").textContent=text}
+
+async function boot(){
+  loadLocal();route();
+  if(!window.claude||!window.claude.use){setSync("warn","Nur auf diesem Gerät");return}
+  try{
+    const [db,user,dl,sm]=await Promise.all([window.claude.use("db"),window.claude.use("user"),window.claude.use("downloads"),window.claude.use("sample")]);
+    DL=dl;SAMPLE=sm;
+    if(user){try{UI.canShare=!!(await user.canEdit())}catch(e){}}
+    if(db){DBROOT=db;db.doc("shared/menu").onSnapshot(sn=>{if(pend("shared"))return;const x=sn.exists?sn.data():null;S.shared=Object.assign(emptyShared(),x?clone(x):{});_dm=null;saveLocal();scheduleRender()},()=>{})}
+    const uid=user?await user.id():null;
+    const can=user?await user.can("data.write"):null;
+    if(!db||!uid||can===false){setSync("warn","Nur auf diesem Gerät");render();return}
+    COLREF=db.collection("data/users/"+uid);mode="db";
+    setSync("","Verbinde …");
+    const timer=setTimeout(()=>setSync("warn","Noch keine Verbindung"),10000);
+    let first=true;
+    COLREF.onSnapshot(snap=>{
+      if(!snap.metadata.fromCache){clearTimeout(timer);setSync("ok","Gesichert")}
+      if(first&&!snap.metadata.fromCache){first=false;
+        const hasLocal=Object.keys(S.visits).length||Object.keys(S.me.ratings||{}).length;
+        if(snap.empty&&hasLocal){Object.keys(S.visits).forEach(persist);persist("state");Object.keys(S.photos).forEach(k=>persist("ph-"+k));return}
+      }
+      applySnap(snap);
+    },()=>{clearTimeout(timer);goLocal()});
+    render();
+  }catch(e){setSync("warn","Nur auf diesem Gerät")}
+}
+
+/* ---------- Helpers ---------- */
+const h=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtDur=ms=>{const m=Math.max(0,Math.floor(ms/60000));return m>=60?Math.floor(m/60)+" h "+String(m%60).padStart(2,"0"):m+" min"};
+const dShort=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"short"});
+const dLong=t=>new Date(t).toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+const dec=(n,d=1)=>n.toFixed(d).replace(".",",");
+let toastT;function toast(t){document.querySelectorAll(".toast").forEach(x=>x.remove());const el=document.createElement("div");el.className="toast";el.setAttribute("role","status");el.textContent=t;document.body.appendChild(el);clearTimeout(toastT);toastT=setTimeout(()=>el.remove(),2800)}
+const icSearch='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
+const rbadge=id=>hasR(id)?`<span class="rb v${rt(id).r}" aria-label="Bewertung ${RLAB[rt(id).r]}">${RLAB[rt(id).r]}</span>`:"";
+function rateCtl(cur,act,extra,sm){return `<div class="rate ${sm?"sm":""}" role="group" aria-label="Bewertung">${RATE.map(([v,s,l])=>`<button class="v${v}" data-act="${act}" data-v="${v}" ${extra||""} aria-pressed="${cur===v}" aria-label="${l}">${s}${sm?"":`<small>${l}</small>`}</button>`).join("")}</div>`}
+function countMap(){const m={};allOrders().forEach(o=>m[o.d]=(m[o.d]||0)+1);return m}
+
+/* ---------- Render ---------- */
+function render(){
+  document.querySelectorAll("#tabs a").forEach(a=>{if(a.dataset.tab===UI.tab)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  const mk=menu().filter(d=>rt(d.id).mark).length,b=document.getElementById("mkbadge");b.hidden=!mk;b.textContent=mk;
+  const app=document.getElementById("app");
+  const ae=document.activeElement,fid=ae&&ae.id&&app.contains(ae)?ae.id:null,sel=fid&&ae.selectionStart;
+  app.innerHTML=({heute:viewHeute,karte:viewKarte,merkliste:viewMerk,statistik:viewStats,verlauf:viewVerlauf}[UI.tab]||viewHeute)();
+  if(fid){const el=document.getElementById(fid);if(el){el.focus();try{el.setSelectionRange(sel,sel)}catch(e){}}}
+  renderOverlay();
+}
+function filterBar(prefix,withMerk){
+  const cats=(withMerk?[["merk","★ Merkliste"]]:[]).concat([["alle","Alle"]],CATS.filter(([c])=>menu().some(d=>d.c===c)));
+  return `<div class="search">${icSearch}<input class="in" id="${prefix}-q" type="search" placeholder="Gericht oder Nummer suchen" value="${h(UI.q)}" data-in="q" autocomplete="off"></div>
+  <div class="chips" role="group" aria-label="Kategorie">${cats.map(([c,n])=>`<button class="chip" data-act="cat" data-v="${c}" aria-pressed="${UI.cat===c}">${h(n)}</button>`).join("")}</div>
+  <div class="chips" role="group" aria-label="Nach Bewertung filtern"><span class="eyebrow" style="align-self:center;flex:none;padding-right:2px">Bewertung</span>${RF.map(([k,n,cls])=>`<button class="chip ${cls}" data-act="rf" data-v="${k}" aria-pressed="${UI.rf===k}">${n}</button>`).join("")}</div>`;
+}
+const RF=[["alle","Alle",""],["2","++","rf2"],["1","+","rf1"],["0","o","rf0"],["-1","−","rf-1"],["-2","−−","rf-2"],["none","Unbewertet",""]];
+function rfOk(d){if(UI.rf==="alle")return true;if(UI.rf==="none")return !hasR(d.id);return hasR(d.id)&&rt(d.id).r===+UI.rf}
+function filtered(extra){
+  const q=UI.q.trim().toLowerCase();
+  return menu().filter(d=>(UI.cat==="alle"||(UI.cat==="merk"?rt(d.id).mark:d.c===UI.cat))&&(!q||d.n.toLowerCase().includes(q)||(d.d||"").toLowerCase().includes(q)||nr(d.id).toLowerCase()===q)&&rfOk(d)&&(!extra||extra(d)));
+}
+const tagsOf=d=>`${d.v?'<span class="tag v">veggie</span>':""}${d.s?'<span class="tag s">scharf</span>':""}`;
+function groupByCat(list,row){
+  if(UI.cat==="merk")return list.length?`<div class="list">${list.map(row).join("")}</div>`:"";
+  return CATS.map(([c,n])=>{const items=list.filter(d=>d.c===c);if(!items.length)return"";return `<div class="cat"><h3><span>${h(n)}</span><span class="num" style="font-family:var(--f-mono);font-size:12px;color:var(--muted);font-weight:500">${items.length}</span></h3><div class="list">${items.map(row).join("")}</div></div>`}).join("");
+}
+function infoBtn(d,sub){const r=rt(d.id);return `<button class="info" data-act="dish" data-id="${d.id}">${art(d)}<span class="txt"><span class="nm">${nr(d.id)?`<span class="nr">${h(nr(d.id))}</span>`:""}${h(d.n)}${r.mark?' <span class="mk" aria-label="auf der Merkliste">★</span>':""}</span><span class="ds">${rbadge(d.id)}${tagsOf(d)}${sub}</span></span></button>`}
+
+/* --- Essen (Heute) --- */
+function viewHeute(){
+  const v=activeVisit();
+  if(!v)return viewStart();
+  if(!UI.vr||UI.vr>v.round)UI.vr=v.round;
+  const vr=UI.vr,ords=vOrders(v),inRound=(v.rounds||{})[vr]||[];
+  const slip={};inRound.forEach(o=>slip[o.d]=(slip[o.d]||0)+1);
+  const list=filtered();
+  return `<section class="view">
+    <div class="live">
+      <div class="k"><b id="elapsed">${fmtDur(Date.now()-v.start)}</b><span>Dauer</span></div>
+      <div class="k"><b>${ords.length}</b><span>Portionen</span></div>
+      <div class="k"><b>${v.round}<span style="font-size:14px;color:var(--muted)">/${MAXR}</span></b><span>Runde</span></div>
+    </div>
+    <div class="roundstrip">
+      <div class="rounds" role="group" aria-label="Runden">${Array.from({length:MAXR},(_,i)=>i+1).map(r=>{const n=((v.rounds||{})[r]||[]).length;const cls=[r<v.round?"done":"",r===v.round?"cur":"",r===vr?"view":""].join(" ");return `<button class="${cls}" data-act="vr" data-v="${r}" ${r>v.round?"disabled":""} aria-label="Runde ${r}${n?`, ${n} Portionen`:""}" aria-current="${r===vr}">${r}${n?`<small>${n}</small>`:""}</button>`}).join("")}</div>
+    </div>
+    <div class="roundhead"><span class="rn">Runde ${vr}</span><span class="grow note">${vr===v.round?`läuft seit <span id="roundtime">${fmtDur(Date.now()-(v.roundStart||v.start))}</span>`:"abgeschlossen, du kannst noch korrigieren"}</span>
+      ${vr!==v.round?`<button class="btn small ghost" data-act="vr" data-v="${v.round}">Zur aktuellen</button>`:v.round<MAXR?`<button class="btn small dark" data-act="newround" ${inRound.length?"":"disabled"}>Runde ${v.round+1} starten</button>`:`<span class="pill">letzte Runde</span>`}</div>
+    <div class="slip" aria-live="polite"><div class="hd"><span>Bestellung · Runde ${vr}</span><span class="num">${inRound.length} Port.</span></div>
+      ${inRound.length?`<ol>${Object.entries(slip).map(([id,q])=>`<li><span class="q">${q}×</span><span class="n">${nr(id)?`<span class="num">${h(nr(id))}</span> · `:""}${h(dish(id).n)}</span><button data-act="minus" data-id="${id}" aria-label="${h(dish(id).n)} entfernen">−</button><button data-act="plus" data-id="${id}" aria-label="${h(dish(id).n)} hinzufügen">+</button></li>`).join("")}</ol>`
+      :`<div class="empty">Tippe unten bei einem Gericht auf <b>+</b>, um es zu Runde ${vr} hinzuzufügen.</div>`}
+    </div>
+    ${filterBar("h",true)}
+    ${list.length?groupByCat(list,d=>{
+      const c=inRound.filter(o=>o.d===d.id).length,all=ords.filter(o=>o.d===d.id).length;
+      return `<div class="dish ${all?"has":""}">${infoBtn(d,all?`<span class="tx">heute ${all}×</span>`:`<span class="tx">${h(d.d||"")}</span>`)}
+      <div class="stepper"><button data-act="minus" data-id="${d.id}" aria-label="${h(d.n)} entfernen" ${c?"":"disabled"}>−</button><span class="c ${c?"":"z"}">${c}</span><button class="plus" data-act="plus" data-id="${d.id}" aria-label="${h(d.n)} zu Runde ${vr}">+</button></div></div>`})
+      :`<div class="card empty-state">${UI.cat==="merk"?"Deine Merkliste ist leer. Markiere Gerichte mit ★ im Gericht-Detail.":`Nichts gefunden für „${h(UI.q)}“.`}</div>`}
+    <label class="f">Notiz zu diesem Essen<textarea class="in" id="vnote-live" data-in="vnote" data-id="${v.id}" placeholder="Wer war dabei, Anlass, Service, Wartezeit …">${h(v.note||"")}</textarea></label>
+    <div class="row" style="justify-content:center;padding-block:4px 8px"><button class="btn primary" data-act="endsheet">Essen beenden</button></div>
+  </section>`;
+}
+function notesCard(){return `<div class="card"><label class="f">Meine Notizen<textarea class="in" id="gnotes" data-in="gnotes" placeholder="Alles Allgemeine: z. B. freitags reservieren, Platz am Fenster, Mittags-Karte ist kleiner …">${h(S.me.notes||"")}</textarea></label></div>`}
+function viewStart(){
+  const vs=visitsSorted(),last=vs[0],marks=menu().filter(d=>rt(d.id).mark);
+  return `<section class="view">
+    <div class="hero">
+      <div class="eyebrow">${vs.length?`Besuch Nr. ${vs.length+1}`:"Dein erster Besuch"}</div>
+      <h2>Hunger?</h2>
+      <p>Starte das Essen am Tisch. Pro Runde trägst du ein, was du bestellst, bis zu ${MAXR} Runden.</p>
+      <div class="dots" aria-hidden="true">${Array.from({length:MAXR},(_,i)=>`<span>${i+1}</span>`).join("")}</div>
+      <div class="seg" role="group" aria-label="Tageszeit">${[["mittag","Mittag"],["abend","Abend"],["wochenende","Wochenende"]].map(([k,n])=>`<button data-act="smode" data-v="${k}" aria-pressed="${UI.startMode===k}">${n}</button>`).join("")}</div>
+      <button class="btn primary" data-act="start" style="align-self:flex-start">Essen starten</button>
+    </div>
+    ${marks.length?`<div class="card"><div class="eyebrow">Auf deiner Merkliste</div><div class="vlist" style="margin-top:6px">${marks.slice(0,5).map(d=>`<button class="vd" data-act="dish" data-id="${d.id}">${art(d)}<span class="nm">${h(d.n)}</span>${rbadge(d.id)}</button>`).join("")}</div>${marks.length>5?`<a class="note" href="#merkliste">+ ${marks.length-5} weitere</a>`:""}</div>`:""}
+    ${last?`<div class="card"><div class="eyebrow">Letztes Essen</div><div class="row" style="margin-top:8px"><div class="grow"><b>${h(dLong(last.start))}</b><div class="note">${vOrders(last).length} Portionen · ${roundCount(last)} Runden · ${fmtDur((last.end||Date.now())-last.start)}</div></div></div></div>`
+      :`<div class="card"><div class="eyebrow">So funktioniert's</div><ol style="margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:5px"><li><b>Essen starten</b>, dann pro Runde Gerichte mit + hinzufügen</li><li>Nach jeder Runde die nächste starten, maximal ${MAXR}</li><li>Gericht antippen: bewerten von −− bis ++, auf die Merkliste setzen, Notiz oder Foto</li><li>Unter <b>All-Time</b> siehst du alles über die Zeit und kannst es herunterladen</li></ol></div>`}
+    ${notesCard()}
+    ${mode==="local"?`<p class="note">Deine Daten liegen nur auf diesem Gerät. Unter Statistik kannst du ein Backup herunterladen und auf einem anderen Gerät laden.</p>`:""}
+  </section>`;
+}
+
+/* --- Karte --- */
+function viewKarte(){
+  const counts=countMap();
+  const F={alle:()=>true,neu:d=>!counts[d.id],gegessen:d=>!!counts[d.id],offen:d=>counts[d.id]&&!hasR(d.id)};if(!F[UI.kfilter])UI.kfilter="alle";
+  const list=filtered(F[UI.kfilter]);
+  const tried=menu().filter(d=>counts[d.id]).length;
+  return `<section class="view">
+    <div class="row"><div class="grow"><h2 class="h2">Die Karte</h2><div class="note"><span class="num">${tried}/${menu().length}</span> probiert${S.shared.updated?` · gemeinsame Karte vom ${dShort(S.shared.updated)}`:""}</div></div></div>
+    <div class="row"><button class="btn small primary" data-act="import">Karte einlesen</button><button class="btn small ghost" data-act="adddish">+ Gericht</button></div>
+    <div class="seg" role="group" aria-label="Filter">${[["alle","Alle"],["gegessen","Schon gegessen"],["offen","Gegessen, unbewertet"],["neu","Noch nie probiert"]].map(([k,n])=>`<button data-act="kf" data-v="${k}" aria-pressed="${UI.kfilter===k}">${n}</button>`).join("")}</div>
+    ${filterBar("k",true)}
+    ${list.length?groupByCat(list,d=>{const n=counts[d.id]||0,r=rt(d.id);return `<div class="dish">${infoBtn(d,`<span class="tx">${r.note?"„"+h(r.note)+"“":n?`${n}× gegessen`:h(d.d||"noch nie gegessen")}</span>`)}</div>`})
+      :`<div class="card empty-state"><span class="big">Nichts hier</span>${UI.rf!=="alle"?`Kein Gericht mit dieser Bewertung${UI.cat!=="alle"?" in dieser Kategorie":""}. <button class="btn small ghost" data-act="rf" data-v="alle" style="margin-top:6px">Bewertungsfilter aufheben</button>`:{gegessen:"Du hast noch nichts gegessen.",offen:"Alles, was du gegessen hast, ist bewertet.",neu:"Du hast schon alles probiert. Respekt.",alle:UI.cat==="merk"?"Deine Merkliste ist leer.":"Kein Gericht passt zur Suche."}[UI.kfilter]}</div>`}
+    ${allDishes().length-menu().length?`<div class="row"><span class="note grow">${allDishes().length-menu().length} Gerichte ausgeblendet</span><button class="btn small ghost" data-act="unhide">Wieder einblenden</button></div>`:""}
+  </section>`;
+}
+
+/* --- Merkliste --- */
+function viewMerk(){
+  const list=menu().filter(d=>rt(d.id).mark),v=activeVisit(),counts=countMap();
+  return `<section class="view">
+    <div><h2 class="h2">Merkliste</h2><div class="note">Was du beim nächsten Mal probieren oder wieder bestellen willst.</div></div>
+    ${list.length?`<div class="list">${list.map(d=>{const n=counts[d.id]||0,r=rt(d.id);const c=v?((v.rounds||{})[UI.vr||v.round]||[]).filter(o=>o.d===d.id).length:0;
+      return `<div class="dish">${infoBtn(d,`<span class="tx">${r.note?"„"+h(r.note)+"“":n?`${n}× gegessen`:"noch nie probiert"}</span>`)}
+      ${v?`<div class="stepper"><span class="c ${c?"":"z"}">${c}</span><button class="plus" data-act="plus" data-id="${d.id}" aria-label="${h(d.n)} zur aktuellen Runde">+</button></div>`:`<button class="btn small ghost" data-act="unmark" data-id="${d.id}" aria-label="${h(d.n)} von der Merkliste nehmen">Entfernen</button>`}</div>`}).join("")}</div>
+      ${v?`<p class="note">Mit + landet das Gericht direkt in Runde ${UI.vr||v.round}.</p>`:""}`
+      :`<div class="card empty-state"><span class="big">Noch leer</span>Öffne ein Gericht in der Karte und tippe auf „★ Merken“. Praktisch für Gerichte, die Kollegen empfohlen haben oder die du nächstes Mal wieder willst.<a class="btn primary" href="#karte" style="margin-top:6px">Zur Karte</a></div>`}
+  </section>`;
+}
+
+/* --- Statistik --- */
+function monthChart(vs){
+  const now=new Date(),months=[];
+  for(let i=11;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({k:d.getFullYear()+"-"+d.getMonth(),l:d.toLocaleDateString("de-DE",{month:"narrow"}),n:0})}
+  vs.forEach(v=>{const d=new Date(v.start);const m=months.find(x=>x.k===d.getFullYear()+"-"+d.getMonth());if(m)m.n++});
+  return barChart(months.map(m=>({l:m.l,n:m.n})),"Besuche pro Monat, letzte 12 Monate",11,0);
+}
+function barChart(items,label,hi,decimals){
+  const max=Math.max(1,...items.map(m=>m.n)),W=340,H=130,pad=22,bw=(W-pad-4)/items.length;
+  const top=decimals?Math.ceil(max):max;
+  const ticks=top<=4&&!decimals?Array.from({length:top+1},(_,i)=>i):[0,top/2,top];
+  const fmt=x=>decimals?dec(x,x%1?1:0):String(Math.round(x));
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${h(label)}">
+    ${ticks.map(t=>{const y=H-20-(t/top)*(H-40);return `<line x1="${pad}" x2="${W-4}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${pad-6}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${fmt(t)}</text>`}).join("")}
+    ${items.map((m,i)=>{const bh=(m.n/top)*(H-40),x=pad+i*bw+3,w=bw-6;return `<rect x="${x}" y="${H-20-bh}" width="${w}" height="${bh}" rx="3" fill="${i===hi?"var(--sake)":"var(--wasabi)"}"/><text x="${x+w/2}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--muted)">${m.l}</text>${m.n?`<text x="${x+w/2}" y="${H-24-bh}" text-anchor="middle" font-size="10" fill="var(--ink)" font-family="IBM Plex Mono,monospace">${decimals?dec(m.n):m.n}</text>`:""}`}).join("")}
+  </svg>`;
+}
+function computeStats(){
+  const vs=periodVisits(),ao=vs.flatMap(vOrders),counts={};ao.forEach(o=>counts[o.d]=(counts[o.d]||0)+1);
+  const done=vs.filter(v=>v.end&&!v.active);
+  const perRound=Array.from({length:MAXR},(_,i)=>{const r=i+1;const vv=vs.filter(v=>roundCount(v)>=r);const n=vv.reduce((s,v)=>s+((v.rounds||{})[r]||[]).length,0);return {l:String(r),n:vv.length?n/vv.length:0}});
+  const rated=menu().filter(d=>hasR(d.id));
+  const dist={};RATE.forEach(([v])=>dist[v]=0);rated.forEach(d=>dist[rt(d.id).r]++);
+  const visitsWith={};vs.forEach(v=>new Set(vOrders(v).map(o=>o.d)).forEach(d=>visitsWith[d]=(visitsWith[d]||0)+1));
+  return {vs,ao,counts,done,perRound,rated,dist,visitsWith};
+}
+function viewStats(){
+  const st=computeStats(),vs=st.vs;
+  const dl=`<div class="card"><div class="eyebrow">Herunterladen</div><p class="note" style="margin:6px 0 10px">Deine Daten als Tabelle für Excel/Numbers oder als komplettes Backup, das du hier wieder laden kannst.</p>
+    <div class="row"><button class="btn small primary" data-act="dl-stats">Statistik (CSV)</button><button class="btn small ghost" data-act="dl-orders">Alle Bestellungen (CSV)</button><button class="btn small ghost" data-act="dl-backup">Backup (JSON)</button>
+    <span class="btn small ghost filebtn">Backup laden<input type="file" id="importfile" accept=".json,application/json" aria-label="Backup laden"></span></div>
+    ${mode==="local"?`<p class="note" style="margin:10px 0 0">Gespeichert nur auf diesem Gerät. Lade ab und zu ein Backup herunter.</p>`:""}</div>`;
+  const allV=visitsSorted();
+  const head=`<div><h2 class="h2">All-Time</h2><div class="note">Alles über deine Hokkaido-Besuche${allV.length?` seit ${h(dLong(allV[allV.length-1].start))}`:""}.</div></div>
+    <div class="seg" role="group" aria-label="Zeitraum">${PERIODS.map(([k,n])=>`<button data-act="period" data-v="${k}" aria-pressed="${UI.period===k}">${n}</button>`).join("")}</div>`;
+  if(!vs.length&&allV.length)return `<section class="view">${head}<div class="card empty-state"><span class="big">Keine Besuche in diesem Zeitraum</span>Wähle oben einen längeren Zeitraum.</div>${dl}</section>`;
+  if(!vs.length)return `<section class="view">${head}<div class="card empty-state"><span class="big">Noch keine Statistik</span>Nach deinem ersten Essen siehst du hier deine Top-Gerichte, wie viel du pro Runde schaffst, deine Bewertungen und Rekorde.<a class="btn primary" href="#heute" style="margin-top:6px">Essen starten</a></div>${dl}</section>`;
+  const tot=st.ao.length,avg=tot/vs.length,avgR=vs.reduce((s,v)=>s+roundCount(v),0)/vs.length;
+  const top=Object.entries(st.counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const most=vs.reduce((m,v)=>{const n=vOrders(v).length;return !m||n>m.n?{v,n}:m},null);
+  const longest=st.done.reduce((m,v)=>!m||(v.end-v.start)>(m.end-m.start)?v:m,null);
+  const maxR=Math.max(...vs.map(roundCount));
+  const avgDur=st.done.length?st.done.reduce((s,v)=>s+(v.end-v.start),0)/st.done.length:0;
+  const catCount={};st.ao.forEach(o=>{const c=dish(o.d).c;catCount[c]=(catCount[c]||0)+1});const catMax=Math.max(1,...Object.values(catCount));
+  const best=st.rated.filter(d=>rt(d.id).r===2).sort((a,b)=>(st.counts[b.id]||0)-(st.counts[a.id]||0));
+  const worst=st.rated.filter(d=>rt(d.id).r<0).sort((a,b)=>rt(a.id).r-rt(b.id).r);
+  const unrated=menu().filter(d=>st.counts[d.id]&&!hasR(d.id));
+  const rcol={"-2":"var(--r-2)","-1":"var(--r-1)","0":"var(--r0)","1":"var(--r1)","2":"var(--r2)"};
+  const lastR=st.perRound.map((x,i)=>x.n?i:-1).filter(i=>i>=0).pop();
+  const fav=top[0]?dish(top[0][0]):null;
+  const favCat=Object.entries(catCount).sort((a,b)=>b[1]-a[1])[0];
+  const totalTime=st.done.reduce((s2,v)=>s2+(v.end-v.start),0);
+  const totalRounds=vs.reduce((s2,v)=>s2+roundCount(v),0);
+  const first=vs[vs.length-1];
+  return `<section class="view">
+    ${head}
+    ${fav?`<div class="card" style="display:flex;gap:14px;align-items:center;background:var(--nori);border-color:var(--nori);color:#eef3f1">${art(fav)}<div class="grow"><div class="eyebrow" style="color:#b9c7c2">${UI.period==="all"?"Dein Lieblingsgericht aller Zeiten":"Dein Lieblingsgericht im Zeitraum"}</div><div style="font-family:var(--f-display);font-size:20px;line-height:1.15;margin-top:2px">${h(fav.n)}</div><div style="font-size:13px;color:#b9c7c2">${top[0][1]}× gegessen in ${st.visitsWith[fav.id]||0} von ${vs.length} Besuchen</div></div></div>`:""}
+    <div class="kpis">
+      <div class="kpi"><b class="num">${vs.length}</b><span>Besuche</span></div>
+      <div class="kpi"><b class="num">${tot}</b><span>Portionen gesamt</span></div>
+      <div class="kpi"><b class="num">${dec(avg)}</b><span>Ø Portionen pro Besuch</span></div>
+      <div class="kpi"><b class="num">${dec(avgR)}</b><span>Ø Runden pro Besuch</span></div>
+    </div>
+    <div class="card"><div class="eyebrow">Ø Portionen pro Runde</div><p class="note" style="margin:4px 0 6px">Wie schnell du nachlässt. Gezählt nur Besuche, die diese Runde erreicht haben.</p>${barChart(st.perRound.slice(0,Math.max(3,(lastR??0)+1)),"Durchschnittliche Portionen je Runde",-1,1)}</div>
+    <div class="card"><div class="eyebrow">Am häufigsten gegessen</div><div class="vlist" style="margin-top:6px">${top.map(([id,n])=>`<button class="vd" data-act="dish" data-id="${id}">${art(dish(id))}<span class="nm">${h(dish(id).n)}</span>${rbadge(id)}<span class="num" style="font-weight:600">${n}×</span></button>`).join("")}</div></div>
+    <div class="card"><div class="eyebrow">Deine Bewertungen</div>
+      ${st.rated.length?`<div class="dist" style="margin-top:12px" role="img" aria-label="Verteilung der Bewertungen">${RATE.map(([v])=>st.dist[v]?`<span style="width:${st.dist[v]/st.rated.length*100}%;background:${rcol[v]}"></span>`:"").join("")}</div>
+      <div class="legend">${RATE.map(([v,s])=>`<span><i style="background:${rcol[v]}"></i>${s} <b class="num">${st.dist[v]}</b></span>`).join("")}</div>`:`<p class="note">Noch nichts bewertet.</p>`}
+      ${best.length?`<div class="eyebrow" style="margin-top:16px">Deine ++</div><div class="vlist">${best.slice(0,8).map(d=>`<button class="vd" data-act="dish" data-id="${d.id}">${art(d)}<span class="nm">${h(d.n)}</span><span class="num note">${st.counts[d.id]||0}×</span></button>`).join("")}</div>`:""}
+      ${worst.length?`<div class="eyebrow" style="margin-top:16px">Lieber nicht mehr</div><div class="vlist">${worst.slice(0,8).map(d=>`<button class="vd" data-act="dish" data-id="${d.id}">${art(d)}<span class="nm">${h(d.n)}</span>${rbadge(d.id)}</button>`).join("")}</div>`:""}
+      ${unrated.length?`<p class="note" style="margin:12px 0 0">${unrated.length} gegessene Gerichte sind noch unbewertet. <a href="#karte" data-act="kfopen">Jetzt bewerten</a></p>`:""}
+    </div>
+    <div class="card"><div class="eyebrow">Besuche pro Monat</div><div style="margin-top:8px">${monthChart(vs)}</div></div>
+    <div class="card"><div class="eyebrow">Rekorde</div><dl class="rec">
+      ${most&&most.n?`<dt>Meiste Portionen</dt><dd>${most.n} · ${dShort(most.v.start)}</dd>`:""}
+      <dt>Meiste Runden</dt><dd>${maxR}/${MAXR}</dd>
+      ${longest?`<dt>Längstes Essen</dt><dd>${fmtDur(longest.end-longest.start)}</dd>`:""}
+      ${avgDur?`<dt>Ø Dauer</dt><dd>${fmtDur(avgDur)}</dd>`:""}
+      <dt>Runden insgesamt</dt><dd>${totalRounds}</dd>
+      ${totalTime?`<dt>Zeit am Tisch insgesamt</dt><dd>${fmtDur(totalTime)}</dd>`:""}
+      ${favCat?`<dt>Lieblingskategorie</dt><dd>${h(catName(favCat[0]))}</dd>`:""}
+      ${first?`<dt>Erster Besuch im Zeitraum</dt><dd>${dShort(first.start)}</dd>`:""}
+      <dt>Verschiedene Gerichte</dt><dd>${Object.keys(st.counts).length}</dd>
+      <dt>Karte probiert</dt><dd>${menu().filter(d=>st.counts[d.id]).length}/${menu().length}</dd>
+    </dl></div>
+    ${tot?`<div class="card"><div class="eyebrow">Was du bestellst</div><div class="bars" style="margin-top:12px">
+      ${CATS.filter(([c])=>catCount[c]).sort((a,b)=>catCount[b[0]]-catCount[a[0]]).map(([c,n])=>`<div class="bar alt"><span class="t">${h(n)}</span><span class="v">${catCount[c]} · ${Math.round(catCount[c]/tot*100)}%</span><div class="track"><div class="fill" style="width:${catCount[c]/catMax*100}%"></div></div></div>`).join("")}
+    </div></div>`:""}
+    ${dl}
+  </section>`;
+}
+
+/* --- Verlauf --- */
+function viewVerlauf(){
+  const vs=visitsSorted();
+  if(!vs.length)return `<section class="view"><div class="card empty-state"><span class="big">Noch keine Besuche</span>Jedes Essen landet hier mit allen Runden und deinen Notizen.<a class="btn primary" href="#heute" style="margin-top:6px">Essen starten</a></div>${notesCard()}</section>`;
+  return `<section class="view"><h2 class="h2">Verlauf <span class="num note" style="font-size:14px">${vs.length}</span></h2>
+  ${vs.map(v=>{const d=new Date(v.start),open=UI.open===v.id,os=vOrders(v),rc=roundCount(v);
+    const per=Array.from({length:Math.max(rc,1)},(_,i)=>((v.rounds||{})[i+1]||[]).length),pm=Math.max(1,...per);
+    return `<div class="visit"><button data-act="toggle" data-id="${v.id}" aria-expanded="${open}">
+      <span class="date">${d.getDate()}<small>${d.toLocaleDateString("de-DE",{month:"short"}).replace(".","")}</small></span>
+      <span class="grow"><b>${h(d.toLocaleDateString("de-DE",{weekday:"long"}))}${v.mode?` · ${h(v.mode[0].toUpperCase()+v.mode.slice(1))}`:""}</b><br><span class="note">${os.length} Portionen · ${rc} Runden${v.note?" · Notiz":""}</span></span>
+      ${v.active?'<span class="pill">läuft</span>':`<span class="spark" aria-hidden="true">${per.map(n=>`<span style="height:${n/pm*100}%"></span>`).join("")}</span>`}
+    </button>
+    ${open?`<div class="body">
+      <div class="mini"><div><b>${v.active?fmtDur(Date.now()-v.start):fmtDur((v.end||v.start)-v.start)}</b><span>Dauer</span></div><div><b>${os.length}</b><span>Portionen</span></div><div><b>${rc}</b><span>Runden</span></div></div>
+      ${Array.from({length:rc},(_,i)=>i+1).map(r=>{const o=(v.rounds||{})[r]||[];if(!o.length)return"";const g={};o.forEach(x=>g[x.d]=(g[x.d]||0)+1);return `<div class="slip"><div class="hd"><span>Runde ${r}</span><span>${o.length} Port.</span></div><ol>${Object.entries(g).map(([id,q])=>`<li><span class="q">${q}×</span><span class="n">${h(dish(id).n)}</span>${rbadge(id)}</li>`).join("")}</ol></div>`}).join("")||'<span class="note">Keine Bestellungen.</span>'}
+      <label class="f">Notiz zu diesem Essen<textarea class="in" id="vn-${v.id}" data-in="vnote" data-id="${v.id}" placeholder="Wer war dabei, Anlass, Service …">${h(v.note||"")}</textarea></label>
+      <div class="row"><button class="btn small primary" data-act="ratevisit" data-id="${v.id}">Gerichte bewerten</button>
+      ${UI.confirmDel===v.id?`<span class="confirm"><span>Wirklich löschen?</span><button class="btn small danger" data-act="del" data-id="${v.id}">Löschen</button><button class="btn small ghost" data-act="nodel">Abbrechen</button></span>`:`<button class="btn small ghost" data-act="askdel" data-id="${v.id}">Löschen</button>`}</div>
+    </div>`:""}</div>`}).join("")}
+    ${notesCard()}
+  </section>`;
+}
+
+/* ---------- Sheets ---------- */
+let SHEET=null;
+function renderOverlay(){
+  const o=document.getElementById("overlay");
+  if(!SHEET){o.innerHTML="";return}
+  const ae=document.activeElement,keep=ae&&o.contains(ae)&&ae.id?ae.id:null;
+  const sc=o.querySelector(".sheet"),st=sc&&SHEET._sameAs===SHEET.type+(SHEET.id||SHEET.vid||"")?sc.scrollTop:0;
+  SHEET._sameAs=SHEET.type+(SHEET.id||SHEET.vid||"");
+  let inner="";
+  if(SHEET.type==="dish"){
+    const d=dish(SHEET.id),r=rt(d.id),counts=countMap(),v=activeVisit();
+    const os=allOrders().filter(x=>x.d===d.id),last=os.slice().sort((a,b)=>b.t-a.t)[0];
+    const vis=new Set(os.map(x=>x.v)).size;
+    const vr=v?(UI.vr||v.round):0,cur=v?((v.rounds||{})[vr]||[]).filter(x=>x.d===d.id).length:0;
+    inner=`${art(d,"lg")}
+      <div><div class="eyebrow">${h((CATS.find(c=>c[0]===d.c)||[,""])[1])}${nr(d.id)?` · Nr. ${h(nr(d.id))}`:""}</div><h2 style="margin-top:4px">${h(d.n)}</h2>${d.l?`<p style="margin:6px 0 0;max-width:60ch">${h(d.l)}</p>`:d.d?`<p style="margin:6px 0 0">${h(d.d)}</p>`:""}<div class="row" style="gap:6px;margin-top:8px">${tagsOf(d)}${d.l&&d.d?`<span class="note">${h(d.d)}</span>`:""}</div></div>
+      <div class="mini"><div><b>${counts[d.id]||0}×</b><span>gegessen</span></div><div><b>${vis}</b><span>Besuche</span></div><div><b>${last?dShort(last.t):"–"}</b><span>zuletzt</span></div></div>
+      ${v?`<div class="row" style="background:var(--sake-soft);border-radius:12px;padding:8px 12px"><span class="grow"><b>Runde ${vr}</b> <span class="note">· ${cur}× drin</span></span><div class="stepper"><button data-act="minus" data-id="${d.id}" aria-label="entfernen" ${cur?"":"disabled"}>−</button><button class="plus" data-act="plus" data-id="${d.id}" aria-label="hinzufügen">+</button></div></div>`:""}
+      <div><div class="eyebrow" style="margin-bottom:6px">Deine Bewertung</div>${rateCtl(hasR(d.id)?r.r:null,"rate")}</div>
+      <div class="row"><button class="tg" data-act="mark" aria-pressed="${!!r.mark}">${r.mark?"★ Auf der Merkliste":"☆ Merken"}</button></div>
+      <label class="f">Notiz zum Gericht<textarea class="in" id="dnote" data-in="dnote" placeholder="z. B. mit Teriyaki-Sauce besser, letzte Runde zu trocken, Kollege empfiehlt …">${h(r.note||"")}</textarea></label>
+      <div><div class="eyebrow" style="margin-bottom:6px">Foto</div><div class="photo-actions">
+        <span class="btn small ghost filebtn">${S.photos[d.id]?"Foto ersetzen":"Eigenes Foto hinzufügen"}<input type="file" id="photofile" accept="image/*" capture="environment" aria-label="Foto aufnehmen oder auswählen"></span>
+        ${S.photos[d.id]?`<button class="btn small ghost" data-act="rmphoto" data-id="${d.id}">Foto entfernen</button>`:""}</div>
+        <p class="note" style="margin:6px 0 0">${S.photos[d.id]?"Dein Foto ersetzt die Zeichnung.":"Die Zeichnung zeigt die Zutaten. Mach beim nächsten Mal ein Foto vom echten Teller."}</p></div>
+      <label class="f">Bestellnummer auf der Karte<input class="in num" id="dnr" data-in="dnr" placeholder="z. B. 54" value="${h(nr(d.id))}"></label>
+      <div class="row"><button class="btn primary grow" data-act="close">Fertig</button><button class="btn ghost" data-act="hide" data-id="${d.id}">${(S.me.custom||[]).some(x=>x.id===d.id)?"Löschen":"Ausblenden"}</button></div>
+      <button class="btn small ghost" data-act="edit" data-id="${d.id}" style="align-self:flex-start">Gericht bearbeiten</button>`;
+  }else if(SHEET.type==="end"){
+    const v=activeVisit();if(!v){SHEET=null;o.innerHTML="";return}
+    inner=`<div class="eyebrow">Essen beenden</div><h2>Satt?</h2>
+      <div class="mini"><div><b>${vOrders(v).length}</b><span>Portionen</span></div><div><b>${roundCount(v)}</b><span>Runden</span></div><div><b>${fmtDur(Date.now()-v.start)}</b><span>Dauer</span></div></div>
+      <div class="row"><button class="btn primary grow" data-act="finish">Beenden & bewerten</button><button class="btn ghost" data-act="close">Weiter essen</button></div>
+      ${vOrders(v).length?"":`<button class="btn small danger" data-act="discard" style="align-self:flex-start">Leeres Essen verwerfen</button>`}`;
+  }else if(SHEET.type==="rate"){
+    const v=S.visits[SHEET.vid];if(!v){SHEET=null;o.innerHTML="";return}
+    const ds=[...new Set(vOrders(v).map(x=>x.d))];
+    const open=ds.filter(d=>!hasR(d)).length;
+    inner=`<div class="eyebrow">${h(dLong(v.start))}</div><h2>Wie war's?</h2>
+      <p class="note" style="margin:-6px 0 0">${ds.length?`${ds.length-open} von ${ds.length} bewertet. Tippe auf den Namen für Notiz, Foto oder Merkliste.`:"Bei diesem Essen ist nichts eingetragen."}</p>
+      <div>${ds.map(did=>{const d=dish(did),n=vOrders(v).filter(x=>x.d===did).length;return `<div class="rrow"><div class="top">${art(d)}<button class="nm" data-act="dish" data-id="${did}">${h(d.n)}${n>1?` <span class="note">${n}×</span>`:""}${rt(did).mark?' <span class="mk">★</span>':""}</button></div>${rateCtl(hasR(did)?rt(did).r:null,"rrate",`data-id="${did}"`,true)}</div>`}).join("")}</div>
+      <button class="btn primary" data-act="close">Fertig</button>`;
+  }else if(SHEET.type==="add"){
+    inner=`<div class="eyebrow">Karte ergänzen</div><h2>Eigenes Gericht</h2>
+      <label class="f">Name<input class="in" id="a-name" placeholder="z. B. Crunchy Salmon Roll"></label>
+      <label class="f">Beschreibung / Zutaten<input class="in" id="a-desc" placeholder="z. B. Lachs, Avocado, frittiert"></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Kategorie<select class="in" id="a-cat">${CATS.map(([c,n])=>`<option value="${c}" ${c==="eigene"?"selected":""}>${h(n)}</option>`).join("")}</select></label>
+      <label class="f">Bestellnummer<input class="in num" id="a-nr" placeholder="optional"></label></div>
+      <p class="note" style="margin:0">Aus Kategorie und Zutaten entsteht automatisch eine passende Zeichnung.</p>
+      <div class="row"><button class="btn primary grow" data-act="saveadd">Hinzufügen</button><button class="btn ghost" data-act="close">Abbrechen</button></div>`;
+  }else if(SHEET.type==="edit"){
+    const d=dish(SHEET.id);const hasMine=(S.me.edits||{})[d.id];
+    inner=`<div class="eyebrow">Gericht bearbeiten</div><h2>${h(d.n)}</h2>
+      <label class="f">Name<input class="in" id="e-n" value="${h(d.n)}"></label>
+      <label class="f">Kurz: Zutaten<input class="in" id="e-d" value="${h(d.d||"")}"></label>
+      <label class="f">Beschreibung<textarea class="in" id="e-l">${h(d.l||"")}</textarea></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="f">Kategorie<select class="in" id="e-c">${CATS.map(([c,n])=>`<option value="${c}" ${c===d.c?"selected":""}>${h(n)}</option>`).join("")}</select></label><label class="f">Bestellnummer<input class="in num" id="e-nr" value="${h(nr(d.id))}"></label></div>
+      <div class="row"><label class="row" style="gap:6px"><input type="checkbox" id="e-v" ${d.v?"checked":""}> veggie</label><label class="row" style="gap:6px"><input type="checkbox" id="e-s" ${d.s?"checked":""}> scharf</label></div>
+      ${UI.canShare?`<label class="row" style="gap:8px;font-size:14px;flex-wrap:nowrap"><input type="checkbox" id="e-share"> <span>Für alle übernehmen, die die App nutzen</span></label>`:""}
+      <div class="row"><button class="btn primary grow" data-act="saveedit" data-id="${d.id}">Speichern</button>${hasMine?`<button class="btn ghost" data-act="resetedit" data-id="${d.id}">Zurücksetzen</button>`:""}<button class="btn ghost" data-act="dish" data-id="${d.id}">Abbrechen</button></div>`;
+  }else if(SHEET.type==="import"){
+    if(!SHEET.rows){
+      const n=(SHEET.imgs||[]).length;
+      inner=`<div class="eyebrow">Karte einlesen</div><h2>Neue oder geänderte Karte</h2>
+        <p style="margin:-4px 0 0;font-size:14px">${SAMPLE?"Fotografiere die Seiten der All-you-can-eat-Karte oder füge ihren Text ein. Claude liest Nummern, Namen und Zutaten aus, und du prüfst alles, bevor es übernommen wird.":"Füge den Text der Karte ein, eine Zeile pro Gericht, zum Beispiel „54 Alaska Roll – Lachs, Avocado“."}</p>
+        ${SAMPLE?`<div class="row"><span class="btn ghost filebtn">${n?"Weitere Fotos":"Fotos der Karte wählen"}<input type="file" id="impimgs" accept="image/*" multiple aria-label="Fotos der Karte wählen"></span>${n?`<span class="note">${n} Seite${n>1?"n":""}</span><button class="btn small ghost" data-act="impclear">Fotos entfernen</button>`:""}</div>
+        ${n?`<div class="row" style="gap:6px">${SHEET.imgs.map((x,i)=>`<img src="${x.url}" alt="Kartenseite ${i+1}" style="width:64px;height:64px;object-fit:cover;border-radius:8px">`).join("")}</div>`:""}`:""}
+        <label class="f">Text der Karte${SAMPLE?" (optional)":""}<textarea class="in" id="imptext" data-in="imptext" placeholder="54 Alaska Roll – Lachs, Avocado&#10;55 California Roll – Surimi, Gurke, Avocado">${h(SHEET.text||"")}</textarea></label>
+        ${SHEET.busy?`<div class="banner" role="status">${h(SHEET.busy)}</div>`:""}${SHEET.err?`<div class="banner" role="alert">${h(SHEET.err)}</div>`:""}
+        <div class="row"><button class="btn primary grow" data-act="impread" ${SHEET.busy?"disabled":""}>${SHEET.busy?"Liest …":"Auslesen"}</button><button class="btn ghost" data-act="close">Abbrechen</button></div>`;
+    }else{
+      const rows=SHEET.rows,nM=rows.filter(r=>r.match).length;
+      inner=`<div class="eyebrow">Karte einlesen</div><h2>${rows.length} Gerichte erkannt</h2>
+        <p style="margin:-4px 0 0;font-size:14px">${nM} passen zu Gerichten in der App und bekommen ihre Nummer. ${rows.length-nM} sind neu und werden hinzugefügt. Nimm das Häkchen weg, wenn etwas falsch erkannt wurde.</p>
+        <div>${rows.map((r,i)=>`<div class="rrow"><label class="top" style="cursor:pointer"><input type="checkbox" data-imp="${i}" ${r.on?"checked":""} aria-label="${h(r.name)} übernehmen"><span class="num" style="width:38px;flex:none">${h(r.nr||"–")}</span><span class="grow" style="min-width:0"><b>${h(r.name)}</b><br><span class="note">${r.match?(dish(r.match).n.toLowerCase()!==r.name.toLowerCase()?"wird zu „"+h(dish(r.match).n)+"“":"bekannt"):"neu · "+h(catName(r.cat))}${r.desc?" · "+h(r.desc):""}</span></span></label></div>`).join("")}</div>
+        <label class="row" style="gap:8px;font-size:14px;flex-wrap:nowrap"><input type="checkbox" id="imp-hide"> <span>Gerichte ausblenden, die nicht auf dieser Karte stehen</span></label>
+        ${UI.canShare?`<label class="row" style="gap:8px;font-size:14px;flex-wrap:nowrap"><input type="checkbox" id="imp-share" checked> <span>Für alle übernehmen, die die App nutzen</span></label>`:""}
+        <div class="row"><button class="btn primary grow" data-act="impapply">Übernehmen</button><button class="btn ghost" data-act="impback">Zurück</button></div>`;
+    }
+  }else if(SHEET.type==="text"){
+    inner=`<div class="eyebrow">Download nicht verfügbar</div><h2>${h(SHEET.title)}</h2><p class="note" style="margin:0">Hier kann die Datei nicht direkt gespeichert werden. Kopiere den Inhalt und füge ihn in eine Datei oder Tabelle ein.</p>
+      <textarea class="in out" id="outtext" readonly>${h(SHEET.text)}</textarea>
+      <div class="row"><button class="btn primary" data-act="copyout">Kopieren</button><button class="btn ghost" data-act="close">Schließen</button></div>`;
+  }
+  o.innerHTML=`<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="in-wrap"><div class="grab"></div>${inner}</div></div>`;
+  const ns=o.querySelector(".sheet");if(ns&&st){ns.style.animation="none";ns.scrollTop=st}
+  if(keep){const el=document.getElementById(keep);if(el)el.focus()}
+}
+
+/* ---------- Export / Import ---------- */
+const csvCell=x=>{const s=String(x??"");return /[;"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+const toCSV=rows=>"﻿"+rows.map(r=>r.map(csvCell).join(";")).join("\r\n");
+const today=()=>new Date().toISOString().slice(0,10);
+function catName(c){return (CATS.find(x=>x[0]===c)||[,c])[1]}
+function statsCSV(){
+  const st=computeStats(),rows=[["Gericht","Nr.","Kategorie","Anzahl gegessen","Besuche mit diesem Gericht","Zuletzt","Bewertung","Merkliste","Notiz"]];
+  const last={};st.ao.forEach(o=>{if(!last[o.d]||o.t>last[o.d])last[o.d]=o.t});
+  allDishes().filter(d=>st.counts[d.id]||hasR(d.id)||rt(d.id).mark||rt(d.id).note).sort((a,b)=>(st.counts[b.id]||0)-(st.counts[a.id]||0)).forEach(d=>{const r=rt(d.id);rows.push([d.n,nr(d.id),catName(d.c),st.counts[d.id]||0,st.visitsWith[d.id]||0,last[d.id]?new Date(last[d.id]).toLocaleDateString("de-DE"):"",hasR(d.id)?RLAB[r.r]:"",r.mark?"ja":"",r.note||""])});
+  rows.push([]);rows.push(["Zusammenfassung"]);
+  rows.push(["Besuche",st.vs.length]);rows.push(["Portionen gesamt",st.ao.length]);
+  rows.push(["Ø Portionen pro Besuch",st.vs.length?dec(st.ao.length/st.vs.length):""]);
+  rows.push(["Ø Runden pro Besuch",st.vs.length?dec(st.vs.reduce((s,v)=>s+roundCount(v),0)/st.vs.length):""]);
+  st.perRound.forEach((x,i)=>{if(x.n)rows.push(["Ø Portionen in Runde "+(i+1),dec(x.n)])});
+  rows.push([]);rows.push(["Besuch","Tageszeit","Dauer (min)","Runden","Portionen","Notiz"]);
+  st.vs.slice().reverse().forEach(v=>rows.push([new Date(v.start).toLocaleString("de-DE"),v.mode||"",v.end?Math.round((v.end-v.start)/60000):"",roundCount(v),vOrders(v).length,v.note||""]));
+  return toCSV(rows);
+}
+function ordersCSV(){
+  const rows=[["Datum","Uhrzeit","Runde","Nr.","Gericht","Kategorie","Bewertung","Notiz zum Gericht"]];
+  visitsSorted().slice().reverse().forEach(v=>vOrders(v).forEach(o=>{const d=dish(o.d),r=rt(o.d),t=new Date(o.t);rows.push([t.toLocaleDateString("de-DE"),t.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}),o.r,nr(o.d),d.n,catName(d.c),hasR(o.d)?RLAB[r.r]:"",r.note||""])}));
+  return toCSV(rows);
+}
+async function offer(filename,data,title){
+  if(!window.claude){try{const type=filename.endsWith(".json")?"application/json":"text/csv";const url=URL.createObjectURL(new Blob([data],{type:type+";charset=utf-8"}));const el=document.createElement("a");el.href=url;el.download=filename;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast("Download gestartet");return}catch(e){}}
+  if(DL){try{await DL.save({filename,data});toast("Gespeichert");return}catch(e){if(e&&e.code==="declined")return;if(e&&e.code==="rate_limited"){toast("Einen Moment, dann nochmal.");return}}}
+  SHEET={type:"text",title,text:data};renderOverlay();
+}
+function importBackup(file){
+  const fr=new FileReader();
+  fr.onload=()=>{try{const x=JSON.parse(fr.result);if(!x||x.app!=="hokkaido-strichliste")throw 0;
+    let nv=0;Object.values(x.visits||{}).forEach(v=>{if(v&&v.id&&!S.visits[v.id]){S.visits[v.id]=v;persist(v.id);nv++}});
+    const me=x.me||{};S.me.ratings=Object.assign({},me.ratings||{},S.me.ratings);S.me.nums=Object.assign({},me.nums||{},S.me.nums);
+    const ids=new Set((S.me.custom||[]).map(c=>c.id));S.me.custom=(S.me.custom||[]).concat((me.custom||[]).filter(c=>!ids.has(c.id)));
+    S.me.hidden=[...new Set([...(S.me.hidden||[]),...(me.hidden||[])])];if(me.notes&&!String(S.me.notes||"").includes(me.notes))S.me.notes=(S.me.notes?S.me.notes+"\n\n":"")+me.notes;
+    persist("state");Object.entries(x.photos||{}).forEach(([k,p])=>{if(!S.photos[k]){S.photos[k]=p;persist("ph-"+k)}});
+    render();toast(`Backup geladen: ${nv} Besuche ergänzt`);
+  }catch(e){toast("Diese Datei ist kein Backup vom Hokkaido Maki Meter.")}};
+  fr.readAsText(file);
+}
+function photoFrom(file,did){
+  const fr=new FileReader();
+  fr.onload=()=>{const img=new Image();img.onload=()=>{const m=480,s=Math.min(1,m/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    let q=.75,url=c.toDataURL("image/jpeg",q);while(url.length>120000&&q>.35){q-=.1;url=c.toDataURL("image/jpeg",q)}
+    S.photos[did]=url;persist("ph-"+did);render();toast("Foto gespeichert")};img.onerror=()=>toast("Das Bild konnte nicht gelesen werden.");img.src=fr.result};
+  fr.readAsDataURL(file);
+}
+
+/* ---------- Menu editing & import ---------- */
+function saveEdit(id,f,num,share){
+  const T=share?S.shared:S.me;
+  const ci=(T.custom||[]).findIndex(x=>x.id===id);
+  if(ci>=0){T.custom=T.custom.slice();T.custom[ci]=Object.assign({},T.custom[ci],f)}else T.edits=Object.assign({},T.edits,{[id]:f});
+  T.nums=Object.assign({},T.nums);if(num)T.nums[id]=num;else delete T.nums[id];
+  if(share){S.me.edits=Object.assign({},S.me.edits);delete S.me.edits[id];S.me.nums=Object.assign({},S.me.nums);delete S.me.nums[id];S.shared.updated=Date.now();persist("shared")}
+  persist("state");
+}
+const toks=s=>slug(s).split("-").filter(Boolean);
+function nameScore(a,b){const A=toks(a),B=new Set(toks(b));if(!A.length||!B.size)return 0;if(A.join("")===[...B].join(""))return 1;let i=0;A.forEach(x=>{if(B.has(x))i++});return i/Math.max(A.length,B.size)}
+function matchRows(rows){
+  const pool=allDishes(),used=new Set();
+  return rows.map(r=>{let best=null,bs=0;pool.forEach(d=>{if(used.has(d.id))return;let sc=nameScore(r.name,d.n);if(sc>0&&r.cat&&r.cat===d.c)sc+=.08;if(sc>bs){bs=sc;best=d}});
+    const m=bs>=.66?best.id:null;if(m)used.add(m);return Object.assign({on:true,match:m},r)});
+}
+function parseLines(text){
+  return text.split(/\n+/).map(l=>l.trim()).filter(l=>l.length>2).map(l=>{const m=l.match(/^(\d{1,3}[a-zA-Z]?)[\s.):\-]+(.+)$/);let nrv="",rest=l;if(m){nrv=m[1];rest=m[2]}
+    const parts=rest.split(/\s[–-]\s|:\s|,\s(?=[a-zäöü])/);const name=parts[0].replace(/\s*\d+[.,]\d{2}\s*€?$/,"").trim();
+    return {nr:nrv,name,cat:"eigene",desc:parts.slice(1).join(", ").trim(),v:/vegan|vegetar/i.test(l),s:/scharf|spicy/i.test(l)}}).filter(r=>r.name);
+}
+function resizeToBlob(file,max){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);c.toBlob(b=>b?res({blob:b,url:c.toDataURL("image/jpeg",.5)}):rej(),"image/jpeg",.85)};img.onerror=rej;img.src=fr.result};fr.onerror=rej;fr.readAsDataURL(file)})}
+async function impRead(){
+  const sh=SHEET,text=(sh.text||"").trim(),imgs=(sh.imgs||[]).map(x=>x.blob);
+  if(!text&&!imgs.length){sh.err=SAMPLE?"Wähle Fotos der Karte oder füge den Text ein.":"Füge zuerst den Text der Karte ein.";renderOverlay();return}
+  sh.err=null;
+  if(!SAMPLE||(!imgs.length&&/^\s*\d/m.test(text)&&text.split(/\n/).length>3)){const rows=matchRows(parseLines(text));if(rows.length){sh.rows=rows}else sh.err="Ich konnte keine Gerichte erkennen. Schreib ein Gericht pro Zeile.";renderOverlay();return}
+  sh.busy="Claude liest die Karte. Das dauert meist 20 bis 60 Sekunden.";renderOverlay();
+  try{
+    const prompt=`Du liest die All-you-can-eat-Speisekarte des japanischen Restaurants Hokkaido Sushi & Grill in Bonn. Erfasse ALLE Speisen (keine Getränke, keine Preise, keine Regeln).
+Antworte nur mit einem JSON-Array. Jedes Element: {"nr": Bestellnummer als Text oder "", "name": Name, "cat": eine von ${CATS.map(c=>'"'+c[0]+'"').join(",")} (vor=Vorspeisen, sal=Salate, warm=warme Gerichte, io=Inside-Out-Rollen, gunkan=Gunkan und Inari, sashimi=Sashimi und Tataki, wok=gebratener Reis und Nudeln), "desc": Zutaten kurz auf Deutsch, "veg": true/false, "spicy": true/false}.
+Beispiel: [{"nr":"54","name":"Alaska Roll","cat":"io","desc":"Lachs, Avocado","veg":false,"spicy":false}]
+Wenn ein Gericht einem dieser bekannten Namen entspricht, verwende genau diese Schreibweise: ${BASE.map(d=>d.n).join(", ")}.`+(text?`\n\nText der Karte:\n${text}`:"");
+    const res=await SAMPLE.json(prompt,imgs.length?{images:imgs}:{});
+    if(SHEET!==sh)return;
+    const arr=Array.isArray(res)?res:(res&&(res.dishes||res.gerichte))||[];
+    const rows=matchRows(arr.filter(x=>x&&x.name).map(x=>({nr:String(x.nr??"").trim(),name:String(x.name).trim(),cat:CATS.some(c=>c[0]===x.cat)?x.cat:"eigene",desc:String(x.desc||"").trim(),v:!!x.veg,s:!!x.spicy})));
+    if(rows.length)sh.rows=rows;else sh.err="Auf den Fotos habe ich keine Gerichte gefunden. Versuch es mit schärferen, geraden Fotos.";
+  }catch(e){
+    if(SHEET!==sh)return;
+    sh.err={not_granted:"Du hast den Zugriff auf Claude nicht erlaubt. Füge stattdessen den Text der Karte ein.",rate_limited:"Gerade zu viele Anfragen. Versuch es in einer Minute nochmal.",images_unavailable:"Fotos können hier nicht ausgelesen werden. Füge den Text der Karte ein.",cancelled:"Abgebrochen."}[e&&e.code]||"Das Auslesen hat nicht geklappt. Versuch es nochmal oder füge den Text ein.";
+    if(text){const rows=matchRows(parseLines(text));if(rows.length){sh.rows=rows;sh.err=null}}
+  }
+  sh.busy=null;renderOverlay();
+}
+function impApply(){
+  const share=UI.canShare&&!!(document.getElementById("imp-share")||{}).checked,hide=!!(document.getElementById("imp-hide")||{}).checked;
+  const T=share?S.shared:S.me;T.nums=Object.assign({},T.nums);T.custom=(T.custom||[]).slice();
+  const keep=new Set();let added=0,nums=0;
+  SHEET.rows.filter(r=>r.on).forEach(r=>{let id=r.match;if(!id){id="x-"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);T.custom.push({id,c:r.cat,n:r.name,d:r.desc,v:r.v,s:r.s});added++}keep.add(id);if(r.nr){T.nums[id]=r.nr;nums++}});
+  T.hidden=(T.hidden||[]).filter(id=>!keep.has(id));
+  if(hide)T.hidden=[...new Set([...T.hidden,...allDishes().filter(d=>!keep.has(d.id)).map(d=>d.id)])];
+  if(share){S.shared.updated=Date.now();persist("shared")}else persist("state");
+  SHEET=null;render();toast(`Übernommen: ${nums} Nummern, ${added} neue Gerichte${share?" für alle":""}`);
+}
+
+/* ---------- Actions ---------- */
+function setR(did,patch){
+  const ratings=Object.assign({},S.me.ratings||{});const r=Object.assign({},ratings[did]||{},patch);
+  Object.keys(r).forEach(k=>{if(r[k]===""||r[k]===false||r[k]==null)delete r[k]});
+  if(Object.keys(r).length)ratings[did]=r;else delete ratings[did];
+  S.me.ratings=ratings;persist("state");
+}
+function act(a,t){
+  const id=t.dataset.id,v=activeVisit();
+  switch(a){
+    case "cat":UI.cat=t.dataset.v;render();break;
+    case "kf":UI.kfilter=t.dataset.v;render();break;
+    case "period":UI.period=t.dataset.v;render();break;
+    case "rf":UI.rf=t.dataset.v;render();break;
+    case "kfopen":UI.kfilter="offen";UI.cat="alle";break;
+    case "smode":UI.startMode=t.dataset.v;render();break;
+    case "start":{const now=Date.now(),vid="v-"+now;S.visits[vid]={id:vid,active:true,start:now,round:1,roundStart:now,rounds:{},mode:UI.startMode,note:""};persist(vid);UI.q="";UI.cat="alle";UI.vr=1;render();window.scrollTo(0,0);toast("Guten Appetit! Runde 1 läuft.");break}
+    case "vr":UI.vr=+t.dataset.v;render();break;
+    case "plus":{if(!v){toast("Starte zuerst ein Essen.");break}const r=UI.vr&&UI.vr<=v.round?UI.vr:v.round;const rounds=Object.assign({},v.rounds||{});rounds[r]=(rounds[r]||[]).concat([{d:id,t:Date.now()}]);v.rounds=rounds;persist(v.id);render();break}
+    case "minus":{if(!v)break;const r=UI.vr&&UI.vr<=v.round?UI.vr:v.round;const arr=((v.rounds||{})[r]||[]).slice();const i=arr.map(x=>x.d).lastIndexOf(id);if(i<0)break;arr.splice(i,1);v.rounds=Object.assign({},v.rounds,{[r]:arr});persist(v.id);render();break}
+    case "newround":if(!v||v.round>=MAXR)break;v.round++;v.roundStart=Date.now();UI.vr=v.round;persist(v.id);render();toast(v.round===MAXR?"Letzte Runde! 🍣":"Runde "+v.round+" läuft");break;
+    case "endsheet":SHEET={type:"end"};renderOverlay();break;
+    case "finish":if(!v)break;v.active=false;v.end=Date.now();v.round=Math.max(1,roundCount(v));persist(v.id);SHEET={type:"rate",vid:v.id};render();break;
+    case "discard":if(!v)break;delete S.visits[v.id];persist(v.id);SHEET=null;render();toast("Essen verworfen");break;
+    case "ratevisit":SHEET={type:"rate",vid:id};renderOverlay();break;
+    case "rrate":{const n=+t.dataset.v;setR(id,{r:rt(id).r===n?null:n});render();break}
+    case "dish":SHEET={type:"dish",id,back:SHEET&&SHEET.type==="rate"?SHEET.vid:null};renderOverlay();break;
+    case "rate":{const n=+t.dataset.v;setR(SHEET.id,{r:rt(SHEET.id).r===n?null:n});render();break}
+    case "mark":{const m=!rt(SHEET.id).mark;setR(SHEET.id,{mark:m});render();toast(m?"Auf die Merkliste gesetzt":"Von der Merkliste genommen");break}
+    case "unmark":setR(id,{mark:false});render();break;
+    case "rmphoto":delete S.photos[id];persist("ph-"+id);render();break;
+    case "hide":{const d=dish(id);if((S.me.custom||[]).some(x=>x.id===id))S.me.custom=S.me.custom.filter(x=>x.id!==id);else S.me.hidden=[...new Set([...(S.me.hidden||[]),id])];persist("state");SHEET=null;render();toast(d.n+" ausgeblendet");break}
+    case "unhide":S.me.hidden=[];S.me.unhidden=(S.shared.hidden||[]).slice();persist("state");render();break;
+    case "adddish":SHEET={type:"add"};renderOverlay();setTimeout(()=>{const el=document.getElementById("a-name");el&&el.focus()},50);break;
+    case "saveadd":{const n=document.getElementById("a-name").value.trim();if(!n){toast("Gib dem Gericht einen Namen.");break}
+      const nid="x-"+Date.now().toString(36);S.me.custom=(S.me.custom||[]).concat([{id:nid,c:document.getElementById("a-cat").value,n,d:document.getElementById("a-desc").value.trim()}]);
+      const num=document.getElementById("a-nr").value.trim();if(num)S.me.nums=Object.assign({},S.me.nums,{[nid]:num});
+      persist("state");SHEET=null;render();toast(n+" hinzugefügt");break}
+    case "edit":SHEET={type:"edit",id};renderOverlay();break;
+    case "saveedit":{const g=x=>document.getElementById(x);const n=g("e-n").value.trim();if(!n){toast("Das Gericht braucht einen Namen.");break}
+      saveEdit(id,{n,d:g("e-d").value.trim(),l:g("e-l").value.trim(),c:g("e-c").value,v:g("e-v").checked,s:g("e-s").checked},g("e-nr").value.trim(),UI.canShare&&g("e-share")&&g("e-share").checked);
+      SHEET={type:"dish",id};render();toast("Gespeichert");break}
+    case "resetedit":S.me.edits=Object.assign({},S.me.edits);delete S.me.edits[id];persist("state");SHEET={type:"dish",id};render();toast("Auf Original zurückgesetzt");break;
+    case "import":SHEET={type:"import",imgs:[],text:""};renderOverlay();break;
+    case "impclear":SHEET.imgs=[];renderOverlay();break;
+    case "impread":impRead();break;
+    case "impback":SHEET.rows=null;renderOverlay();break;
+    case "impapply":impApply();break;
+    case "close":{const back=SHEET&&SHEET.type==="dish"&&SHEET.back&&S.visits[SHEET.back];SHEET=back?{type:"rate",vid:SHEET.back}:null;render();break}
+    case "toggle":UI.open=UI.open===id?null:id;UI.confirmDel=null;render();break;
+    case "askdel":UI.confirmDel=id;render();break;
+    case "nodel":UI.confirmDel=null;render();break;
+    case "del":delete S.visits[id];persist(id);UI.confirmDel=null;UI.open=null;render();toast("Essen gelöscht");break;
+    case "dl-stats":offer(`hokkaido-maki-meter-statistik-${today()}.csv`,statsCSV(),"Statistik (CSV)");break;
+    case "dl-orders":offer(`hokkaido-maki-meter-bestellungen-${today()}.csv`,ordersCSV(),"Alle Bestellungen (CSV)");break;
+    case "dl-backup":offer(`hokkaido-maki-meter-backup-${today()}.json`,JSON.stringify({app:"hokkaido-strichliste",version:3,exported:new Date().toISOString(),visits:S.visits,me:S.me,photos:S.photos}),"Backup (JSON)");break;
+    case "copyout":{const ta=document.getElementById("outtext");const txt=ta.value;(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast("Kopiert")).catch(()=>{ta.focus();ta.select();toast("Text markiert, jetzt kopieren")});break}
+  }
+}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-act]");if(!t||t.disabled)return;act(t.dataset.act,t)});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.id==="photofile"&&t.files&&t.files[0]&&SHEET&&SHEET.id)photoFrom(t.files[0],SHEET.id);
+  if(t.id==="importfile"&&t.files&&t.files[0])importBackup(t.files[0]);
+  if(t.id==="impimgs"&&t.files&&t.files.length&&SHEET&&SHEET.type==="import"){const sh=SHEET;Promise.all([...t.files].slice(0,8).map(f=>resizeToBlob(f,1600).catch(()=>null))).then(list=>{sh.imgs=(sh.imgs||[]).concat(list.filter(Boolean)).slice(0,8);if(SHEET===sh)renderOverlay()})}
+  if(t.dataset&&t.dataset.imp!=null&&SHEET&&SHEET.rows)SHEET.rows[+t.dataset.imp].on=t.checked;
+});
+const inT={};
+document.addEventListener("input",e=>{
+  const t=e.target,k=t.dataset.in;if(!k)return;
+  if(k==="q"){UI.q=t.value;render();return}
+  if(k==="imptext"){if(SHEET)SHEET.text=t.value;return}
+  const sid=SHEET&&SHEET.id,did=t.dataset.id,val=t.value,key=k+(did||sid||"");
+  clearTimeout(inT[key]);
+  inT[key]=setTimeout(()=>{
+    if(k==="dnote"&&sid)setR(sid,{note:val.trim()});
+    else if(k==="dnr"&&sid){const nums=Object.assign({},S.me.nums);const x=val.trim();if(x)nums[sid]=x;else delete nums[sid];S.me.nums=nums;persist("state")}
+    else if(k==="vnote"){const x=S.visits[did];if(x){x.note=val;persist(did)}}
+    else if(k==="gnotes"){S.me.notes=val;persist("state")}
+  },500);
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&SHEET){SHEET=null;render()}});
+
+/* ---------- Routing & ticking ---------- */
+function route(){const t=(location.hash||"").replace("#","");UI.tab=["heute","karte","merkliste","statistik","verlauf"].includes(t)?t:"heute";SHEET=null;render()}
+window.addEventListener("hashchange",()=>{route();window.scrollTo(0,0)});
+setInterval(()=>{const v=activeVisit();if(!v)return;const el=document.getElementById("elapsed");if(el)el.textContent=fmtDur(Date.now()-v.start);const r=document.getElementById("roundtime");if(r)r.textContent=fmtDur(Date.now()-(v.roundStart||v.start))},20000);
+let wake=null;document.addEventListener("click",async()=>{try{if(activeVisit()&&navigator.wakeLock&&!wake){wake=await navigator.wakeLock.request("screen");wake.addEventListener("release",()=>wake=null)}}catch(e){}},{passive:true});
+boot();
+</script>
+
+</body>
+</html>
