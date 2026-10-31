@@ -3,9 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Maki Meter">
 <meta name="theme-color" content="#14110f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Maki Meter">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -47,6 +52,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 
 header.top{padding-block:16px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);margin-bottom:12px}
 .brand{font-family:var(--f-display);font-weight:800;font-size:21px;min-width:0;line-height:1;letter-spacing:.01em}
+.logo{width:44px;height:44px;flex:none;border-radius:11px;box-shadow:0 0 0 1px var(--gold-soft)}
 .hanko{width:40px;height:40px;flex:none;border-radius:6px;background:var(--sake);color:var(--sake-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:12px;line-height:1.05;writing-mode:vertical-rl;letter-spacing:.05em;box-shadow:inset 0 0 0 2px rgb(255 246 236/.35);transform:rotate(-3deg)}
 .brand small{display:block;font-family:var(--f-body);font-size:12px;color:var(--muted);letter-spacing:.04em;margin-top:4px;font-weight:500}
 .sync{margin-left:auto;font-size:11px;max-width:88px;line-height:1.25;color:var(--muted);display:flex;align-items:center;gap:6px;text-align:right}
@@ -238,7 +244,7 @@ textarea.out{font-family:var(--f-mono);font-size:12px;min-height:140px}
 
 <div class="wrap">
   <header class="top">
-    <span class="hanko" aria-hidden="true">北海道</span><div class="brand">Hokkaido <span style="color:var(--sake)">Maki Meter</span><small>食べ放題 · Bonn</small></div>
+    <img class="logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYmciIGN4PSI1MCUiIGN5PSIzOCUiIHI9Ijc1JSI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMmEyMjFkIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMTEwZTBjIi8+PC9yYWRpYWxHcmFkaWVudD4KICAgIDxwYXR0ZXJuIGlkPSJ3YXZlIiB3aWR0aD0iNjQiIGhlaWdodD0iMzIiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiNkM2E4NWMiIHN0cm9rZS1vcGFjaXR5PSIuMTYiIHN0cm9rZS13aWR0aD0iMi41Ij4KICAgICAgICA8Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIyOCIvPjxjaXJjbGUgY3g9IjMyIiBjeT0iMzIiIHI9IjE5Ii8+PGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMTAiLz4KICAgICAgICA8Y2lyY2xlIGN4PSIwIiBjeT0iMTYiIHI9IjI4Ii8+PGNpcmNsZSBjeD0iNjQiIGN5PSIxNiIgcj0iMjgiLz4KICAgICAgPC9nPgogICAgPC9wYXR0ZXJuPgogICAgPGNsaXBQYXRoIGlkPSJsb3dlciI+PHJlY3QgeD0iMCIgeT0iMzMwIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjE4MiIvPjwvY2xpcFBhdGg+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiBmaWxsPSJ1cmwoI2JnKSIvPgogIDxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiBmaWxsPSJ1cmwoI3dhdmUpIiBjbGlwLXBhdGg9InVybCgjbG93ZXIpIi8+CiAgPCEtLSBtYWtpIHJvbGwsIHRvcCB2aWV3IC0tPgogIDxjaXJjbGUgY3g9IjI1NiIgY3k9IjIzNiIgcj0iMTcyIiBmaWxsPSIjMGIwZjBkIi8+CiAgPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjM2IiByPSIxNzIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2QzYTg1YyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjM2IiByPSIxNDgiIGZpbGw9IiNmNWVmZTIiLz4KICA8ZyBmaWxsPSIjZTZkY2M4Ij4KICAgIDxlbGxpcHNlIGN4PSIxOTAiIGN5PSIxNjAiIHJ4PSIxMiIgcnk9IjciIHRyYW5zZm9ybT0icm90YXRlKC0zMCAxOTAgMTYwKSIvPgogICAgPGVsbGlwc2UgY3g9IjMzMCIgY3k9IjE3MCIgcng9IjEyIiByeT0iNyIgdHJhbnNmb3JtPSJyb3RhdGUoMjUgMzMwIDE3MCkiLz4KICAgIDxlbGxpcHNlIGN4PSIxNjAiIGN5PSIyNjAiIHJ4PSIxMiIgcnk9IjciIHRyYW5zZm9ybT0icm90YXRlKDcwIDE2MCAyNjApIi8+CiAgICA8ZWxsaXBzZSBjeD0iMzUwIiBjeT0iMjkwIiByeD0iMTIiIHJ5PSI3IiB0cmFuc2Zvcm09InJvdGF0ZSgtNDAgMzUwIDI5MCkiLz4KICAgIDxlbGxpcHNlIGN4PSIyNDAiIGN5PSIzNDUiIHJ4PSIxMiIgcnk9IjciIHRyYW5zZm9ybT0icm90YXRlKDEwIDI0MCAzNDUpIi8+CiAgICA8ZWxsaXBzZSBjeD0iMzAwIiBjeT0iMTI1IiByeD0iMTIiIHJ5PSI3IiB0cmFuc2Zvcm09InJvdGF0ZSgtMTAgMzAwIDEyNSkiLz4KICAgIDxlbGxpcHNlIGN4PSIyMDUiIGN5PSIzMjAiIHJ4PSIxMCIgcnk9IjYiIHRyYW5zZm9ybT0icm90YXRlKDUwIDIwNSAzMjApIi8+CiAgPC9nPgogIDwhLS0gc2FsbW9uIC0tPgogIDxwYXRoIGQ9Ik0yNTYgMjM2IG0tODQgMCBhODQgODQgMCAwIDEgMTY4IDAgeiIgZmlsbD0iI2YyODg0ZiIvPgogIDxwYXRoIGQ9Ik0xODggMjE0IGw0MCAtNTAgTTIyMiAxOTYgbDM0IC00MiBNMjYwIDE5MCBsMzAgLTM2IE0yOTYgMTk4IGwyMiAtMjYiIHN0cm9rZT0iI2ZmZTNjZiIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9Ii43NSIvPgogIDwhLS0gYXZvY2FkbyAtLT4KICA8cGF0aCBkPSJNMjU2IDIzNiBtLTg0IDAgYTg0IDg0IDAgMCAwIDg0IDg0IHYtODQgeiIgZmlsbD0iIzhmYmY0ZCIvPgogIDwhLS0gY3VjdW1iZXIgLS0+CiAgPHBhdGggZD0iTTI1NiAyMzYgdjg0IGE4NCA4NCAwIDAgMCA4NCAtODQgeiIgZmlsbD0iIzRmOWEzYyIvPgogIDxjaXJjbGUgY3g9IjMwMCIgY3k9IjI2OCIgcj0iMTAiIGZpbGw9IiNkZmYwYzgiLz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyMzYiIHI9Ijg0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwYjBmMGQiIHN0cm9rZS13aWR0aD0iNCIgb3BhY2l0eT0iLjM1Ii8+CiAgPCEtLSBoYW5rbyBzdGFtcCAtLT4KICA8ZyB0cmFuc2Zvcm09InJvdGF0ZSgtNiA0MDQgNDE4KSI+CiAgICA8cmVjdCB4PSIzNTIiIHk9IjM2NiIgd2lkdGg9IjEwNCIgaGVpZ2h0PSIxMDQiIHJ4PSIxNCIgZmlsbD0iI2UyNDcyZiIvPgogICAgPHJlY3QgeD0iMzYxIiB5PSIzNzUiIHdpZHRoPSI4NiIgaGVpZ2h0PSI4NiIgcng9IjkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZjZlYyIgc3Ryb2tlLW9wYWNpdHk9Ii41NSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgICA8dGV4dCB4PSI0MDQiIHk9IjQ0MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ik5vdG8gU2VyaWYgQ0pLIEpQLCBOb3RvIFNlcmlmIEpQLCBzZXJpZiIgZm9udC13ZWlnaHQ9IjkwMCIgZm9udC1zaXplPSI2NCIgZmlsbD0iI2ZmZjZlYyI+5YyXPC90ZXh0PgogIDwvZz4KPC9zdmc+Cg==" alt="" width="44" height="44"><div class="brand">Hokkaido <span style="color:var(--sake)">Maki Meter</span><small>食べ放題 · Bonn</small></div>
     <div class="sync"><span class="dot" id="syncdot"></span><span id="synctext">Lädt …</span></div>
   </header>
   <main id="app"></main>
